@@ -46,7 +46,15 @@ docker-compose up -d
 
 
 ### load Tickers
-The redis node and port can be changed. The python code uses 2 environment variable REDIS_SERVER and REDIS_PORT.  The default is REDIS_SERVER=redis and REDIS_PORT=6379
+* If PROCESS_DATES is set, these entries should be made (customize as needed)
+```bash
+docker exec -it redis redis-cli < hset process_control oldest_value 20220101 current_value 20220315 
+```
+* If PROCESS_RECENTS is set, set list of recent dates to specifically set the MostRecent flag to false
+```bash
+docker exec -it redis redis-cli < sadd remove_current 20220314 20220313 20220312 
+```
+* make sure the TICKER_FILE_LOCATION is good and then start the load
 ```bash
 docker exec -it flask bash -c "python TickerImport.py"
 ```
