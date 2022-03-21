@@ -66,34 +66,6 @@ def recreateIndex():
         db.ft(index_name="Ticker").dropindex(delete_documents=False)
         db.ft(index_name="Ticker").create_index(TickerSCHEMA, definition=TickerDefinition)
 
-def calculateScoring():
-    #  if environment is set to write to
-    #  jason change the index type and the field prefix
-    #  for JSON the field prefix is $.   for hash there is none
-    if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
-        useIndexType = IndexType.JSON
-        fieldPrefix = "$."
-    else:
-        useIndexType = IndexType.HASH
-        fieldPrefix = ""
-
-    db = redis.StrictRedis(redis_server, redis_port, charset="utf-8", decode_responses=True)  # connect to server
-
-    TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score',
-                                       filter="@MostRecent=='true'")
-    TickerSCHEMA = (
-        TextField(fieldPrefix + "Ticker", as_name='Ticker', no_stem=True),
-        TagField(fieldPrefix + "Per", separator=";", as_name='Per'),
-        TextField(fieldPrefix + "MostRecent", as_name='MostRecent', no_stem=True),
-        NumericField(fieldPrefix + "Date", as_name='Date'),
-        NumericField(fieldPrefix + "Open", as_name='Open'),
-        NumericField(fieldPrefix + "High", as_name='High'),
-        NumericField(fieldPrefix + "Low", as_name='Low'),
-        NumericField(fieldPrefix + "Close", as_name='Close'),
-        NumericField(fieldPrefix + "Volume", as_name='Volume'),
-        NumericField(fieldPrefix + "Score", as_name='Score'),
-        TagField(fieldPrefix + "OpenInt", separator=";", as_name='OpenInt')
-    )
 
 def isInt(s):
     try:

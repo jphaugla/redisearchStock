@@ -73,7 +73,14 @@ docker exec -it redis redis-cli hgetall ticker_load
  ```bash
 docker exec -it flask bash -c "python appy.py"
  ```
+### Create Index
+There is python running in the flask container (appy.py) listening for API calls.  One of the API calls will recreate the index.  Use the flowing script to create the index
+```bash
+cd scripts
+./redoIndex.sh
+```
   * run API tests
+This postman part is not tested yet-still under development
 Easiest is to run the API tests using Postman.  Running Postman, use File->Import to import
 the following file for use with Postman-https://github.com/jphaugla/redisJSONProductCatalog/blob/main/scripts/Product-Category%20APIs.postman_collection.json
 Once the collection is imported, run each request to test the APIs.
