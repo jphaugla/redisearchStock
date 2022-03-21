@@ -17,6 +17,9 @@ Two options for setting the environment are given:
 * Download stock files here
  [Stooq stock files](https://stooq.com/db/h/)
 * Once downloaded, move the file (it should be a directory called *data*) to the main redisearchStock directory
+  * Can combine the various stooq files at the daily level by including world, us, etc under this daily directory
+  * There is a separate file for each *stock* or *currency* with a long history of data.  See instructions below for setting the environment variables to limit history load
+  
 
 ### Set environment
 
@@ -24,18 +27,18 @@ The docker compose file has the environment variables set for the redis connecti
 This code uses redisearch.  The redis database must have both of these modules installed.
 As of this writing, this redismod docker image (which includes these modules) does not work on the m1 arm64 based mac.  
 Default docker-compose is set to redismod.  Check the environment variables for appropriateness. Especially check the TICKER_DATA_LOCATION because loading all of 
-the US tickers with all of the history can be a lot of data on a laptop.  Here is explanation of the non-obvious variables
+the US tickers with all of the history can be a lot of data on a laptop.  Here is an explanation of the environment variables.
 Modify these values in docker-compose.yml
 
-| variable             | Original Value | Desccription                                                                                                                                                              |
-|----------------------|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| REDIS_HOST           | redis          | The name of the redis docker container                                                                                                                                    |
-| REDIS_PORT           | 6379           | redis port                                                                                                                                                                |
-| TICKER_FILE_LOCATION | /data          | leave in /data but can use sub-directory to minimize load size                                                                                                            | 
-| PROCESSES            | 6              | On larger machines, increases this will increase load speed                                                                                                               |
-| WRITE_JSON           | false          | flag to turn on to use JSON instead of Hash structures                                                                                                                    |
+| variable             | Original Value | Desccription                                                                                                                                                            |
+|----------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| REDIS_HOST           | redis          | The name of the redis docker container                                                                                                                                  |
+| REDIS_PORT           | 6379           | redis port                                                                                                                                                              |
+| TICKER_FILE_LOCATION | /data          | leave in /data but can use sub-directory to minimize load size                                                                                                          | 
+| PROCESSES            | 6              | On larger machines, increases this will increase load speed                                                                                                             |
+| WRITE_JSON           | false          | flag to use JSON instead of Hash structures                                                                                                                    |
 | PROCESS_DATES        | true           | have date-based logic instead of just a simple initial load.  Allows for <br/> skipping any records old than a particular date (requires creation of specific redis hash) |   
-| PROCESS_RECENTS      | false          | will set most recent flag for specified keys back back to false    (requires creation of specific redis set)                                                              |
+| PROCESS_RECENTS      | false          | will set most recent flag for specified keys back to false    (requires creation of specific redis set)                                                             |
 
 The created index is filtered to only the records where MostRecent is set to true
 
@@ -47,10 +50,12 @@ docker-compose up -d
 
 ### load Tickers
 * If PROCESS_DATES is set, these entries should be made (customize as needed)
+  * This will load all the values for 2022 and set the current data to 20220315
 ```bash
 docker exec -it redis redis-cli < hset process_control oldest_value 20220101 current_value 20220315 
 ```
 * If PROCESS_RECENTS is set, set list of recent dates to specifically set the MostRecent flag to false
+  * This is needed when loading the next set of values.  E.g.  Current data is 20220315 and want to ensure three previous dates are false for MostRecent.  
 ```bash
 docker exec -it redis redis-cli < sadd remove_current 20220314 20220313 20220312 
 ```

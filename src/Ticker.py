@@ -29,6 +29,7 @@ class Ticker(object):
         self.Close = 0.0
         self.Volume = 0
         self.OpenInt = ""
+        self.Score = 1.0
         self.MostRecent = "false"
         for key in kwargs:
             if key == "<TICKER>":

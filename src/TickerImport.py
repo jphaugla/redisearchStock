@@ -146,8 +146,8 @@ def process_file(file_name):
         csv_file.close()
         # print(str(ticker_idx) + " rows from file " + short_file_name + " loaded to redis " + str(ticker_loaded))
         # print("rows added from start " + start_time + " ended at " + str(datetime.datetime.now()))
-        conn.hset("ticker_load", short_file_name + "start:" + start_time + ":finished:" + str(datetime.datetime.now()))
-          + ":rows_in_file:" + str(ticker_idx) + ":rows_loaded:" + str(ticker_loaded)
+        conn.hset("ticker_load", short_file_name, "start:" + start_time + ":finished:" + str(datetime.datetime.now())
+                  + ":rows_in_file:" + str(ticker_idx) + ":rows_loaded:" + str(ticker_loaded))
 
 
 

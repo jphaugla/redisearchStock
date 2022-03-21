@@ -29,7 +29,7 @@ services:
     environment:
       - REDIS_SERVER=redis
       - REDIS_PORT=6379
-      - TICKER_FILE_LOCATION=/data/daily/us/nyseetfs
+      - TICKER_FILE_LOCATION=/data/daily/us/nysemkt stocks
       - PROCESSES=6
       - PYTHONBUFFERED=0
       - WRITE_JSON=false

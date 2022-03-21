@@ -2,4 +2,5 @@ ft.search Ticker *
 ft.info Ticker
 ft.search Ticker "@Volume:[10000 1000000]"
 ft.search Ticker "@MostRecent:true"
-ft.search Ticker @Ticker:SPY.US"
+ft.search Ticker "@Ticker:SACC.US"
+ft.search Ticker "@Ticker:sa*" SORTBY Volume DESC RETURN 1 Ticker
