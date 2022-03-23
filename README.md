@@ -43,7 +43,9 @@ Modify these values in docker-compose.yml
 The created index is filtered to only the records where MostRecent is set to true
 
 ## docker compose startup
+Build just needs to be done initially
 ```bash
+docker-compose build
 docker-compose up -d 
 ```
 
@@ -52,7 +54,8 @@ docker-compose up -d
 * If PROCESS_DATES is set, these entries should be made (customize as needed)
   * This will load all the values for 2022 and set the current data to 20220315
 ```bash
-docker exec -it redis redis-cli < hset process_control oldest_value 20220101 current_value 20220315 
+docker exec -it redis redis-cli 
+hset process_control oldest_value 20220101 current_value 20220315 
 ```
 * If PROCESS_RECENTS is set, set list of recent dates to specifically set the MostRecent flag to false
   * This is needed when loading the next set of values.  E.g.  Current data is 20220315 and want to ensure three previous dates are false for MostRecent.  

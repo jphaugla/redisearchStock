@@ -74,15 +74,15 @@ def home(path):
             print("number returned is " + str(TickerReturn.total))
             # print("TickerReturn")
             # print(TickerReturn)
-            # print("TickerReturn docs 0")
-            # print(TickerReturn.docs[0])
+            print("TickerReturn docs 0")
+            print(TickerReturn.docs[0])
             # print("TickerReturn docs 0 id")
             # print(TickerReturn.docs[0].id)
-            # print("TickerReturn docs 0 TickerShort")
-            # print(TickerReturn.docs[0].TickerShort)
+            print("TickerReturn docs 0 TickerShort")
+            print(TickerReturn.docs[0].TickerShort)
             TickerResults = []
             for i in range(min(TickerReturn.total - 1, 9)):
-                results = TickerReturn.docs[i].TickerShort
+                results = TickerReturn.docs[i]
                 TickerResults.append(results)
             # return_string = jsonify(TickerResults, 200)
             return_string = jsonpickle.encode(TickerResults)
@@ -129,6 +129,14 @@ def home(path):
              return_string = "fell to else"
 
     return return_string
+@app.after_request # blueprint can also be app~~
+def after_request(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE'
+    if (response.headers['Content-Type']!='text/html'):
+        response.headers['Content-Type'] = 'application/json'
+    return response
+
 
 def recreateIndex():
     #  if environment is set to write to
