@@ -10,6 +10,8 @@ from os import environ
 
 from redis.commands.search.field import TextField, TagField, NumericField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+from redis.commands.search.query import NumericFilter, Query
+import jsonpickle
 
 
 app = Flask(__name__)
@@ -29,56 +31,11 @@ else:
     redis_port = 6379
     print("no passed in redis port variable ")
 print("beginning of appy.py now")
-
-def recreateIndex():
-    #  if environment is set to write to
-    #  jason change the index type and the field prefix
-    #  for JSON the field prefix is $.   for hash there is none
-    if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
-        useIndexType = IndexType.JSON
-        fieldPrefix = "$."
-    else:
-        useIndexType = IndexType.HASH
-        fieldPrefix = ""
-
-    db = redis.StrictRedis(redis_server, redis_port, charset="utf-8", decode_responses=True)  # connect to server
-
-    TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score',
-                                       filter="@MostRecent=='true'")
-    TickerSCHEMA = (
-        TextField(fieldPrefix + "Ticker", as_name='Ticker', no_stem=True),
-        TagField(fieldPrefix + "Per", separator=";", as_name='Per'),
-        TextField(fieldPrefix + "MostRecent", as_name='MostRecent', no_stem=True),
-        NumericField(fieldPrefix + "Date", as_name='Date'),
-        NumericField(fieldPrefix + "Open", as_name='Open'),
-        NumericField(fieldPrefix + "High", as_name='High'),
-        NumericField(fieldPrefix + "Low", as_name='Low'),
-        NumericField(fieldPrefix + "Close", as_name='Close'),
-        NumericField(fieldPrefix + "Volume", as_name='Volume'),
-        NumericField(fieldPrefix + "Score", as_name='Score'),
-        TagField(fieldPrefix + "OpenInt", separator=";", as_name='OpenInt')
-    )
-
-    print("before try on Ticker")
-    try:
-        db.ft(index_name="Ticker").create_index(TickerSCHEMA, definition=TickerDefinition)
-    except redis.ResponseError:
-        db.ft(index_name="Ticker").dropindex(delete_documents=False)
-        db.ft(index_name="Ticker").create_index(TickerSCHEMA, definition=TickerDefinition)
-
-
-def isInt(s):
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
-
-
 @app.route('/', defaults={'path': ''}, methods=['PUT', 'GET'])
 @app.route('/<path:path>', methods=['PUT', 'GET', 'DELETE'])
 def home(path):
     print("the request method is " + request.method + " path is " + path)
+    db = redis.StrictRedis(redis_server, redis_port, charset="utf-8", decode_responses=True)  # connect to server
     if request.method == 'PUT':
         # if prod_idx is set it is a replace
         # if proc_idx is not set, is insert
@@ -102,22 +59,33 @@ def home(path):
 
     elif request.method == 'GET':
         print("GET Method with path " + path)
-        if path == 'search':
+        if path == 'search/':
             search_column = request.args.get("search_column")
-            print("search column is " + search_column)
+            # print("search column is " + search_column)
             search_str = request.args.get("search_string")
+            sort_by = request.args.get("sort_column")
             print("search string is " + search_str)
             TickerSearch = "@" + str(search_column) + ":" + str(search_str)
+            q1 = Query(TickerSearch)
+            if sort_by is not None:
+                q1.sort_by(sort_by, asc=False)
             print("TickerSearch is " + TickerSearch)
-            TickerReturn = db.ft(index_name="Ticker").search(TickerSearch)
+            TickerReturn = db.ft(index_name="Ticker").search(q1)
             print("number returned is " + str(TickerReturn.total))
-            TickerResults =[]
-            for i in range(min(TickerReturn.total-1, 9)):
-                results = TickerReturn.docs[i].json
-                final_results = json.loads(results)
-                # TickerResults.append(TickerReturn.docs[i].json)
-                TickerResults.append(final_results)
-            return_string = jsonify(TickerResults, 200)
+            # print("TickerReturn")
+            # print(TickerReturn)
+            # print("TickerReturn docs 0")
+            # print(TickerReturn.docs[0])
+            # print("TickerReturn docs 0 id")
+            # print(TickerReturn.docs[0].id)
+            # print("TickerReturn docs 0 TickerShort")
+            # print(TickerReturn.docs[0].TickerShort)
+            TickerResults = []
+            for i in range(min(TickerReturn.total - 1, 9)):
+                results = TickerReturn.docs[i].TickerShort
+                TickerResults.append(results)
+            # return_string = jsonify(TickerResults, 200)
+            return_string = jsonpickle.encode(TickerResults)
         # category passed in will be Category name, return Category attributes
         elif path == 'category':
             get_category = request.args.get("show_category")
@@ -157,9 +125,56 @@ def home(path):
              print("in the GET before call to index.html")
              response=app.send_static_file('index.html')
              response.headers['Content-Type']='text/html'
-             return_string = response
+             # return_string = response
+             return_string = "fell to else"
 
     return return_string
+
+def recreateIndex():
+    #  if environment is set to write to
+    #  jason change the index type and the field prefix
+    #  for JSON the field prefix is $.   for hash there is none
+    if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
+        useIndexType = IndexType.JSON
+        fieldPrefix = "$."
+    else:
+        useIndexType = IndexType.HASH
+        fieldPrefix = ""
+
+    db = redis.StrictRedis(redis_server, redis_port, charset="utf-8", decode_responses=True)  # connect to server
+
+    TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score',
+                                       filter="@MostRecent=='true'")
+    TickerSCHEMA = (
+        TextField(fieldPrefix + "Ticker", as_name='Ticker', no_stem=True),
+        TagField(fieldPrefix + "Per", separator=";", as_name='Per'),
+        TextField(fieldPrefix + "MostRecent", as_name='MostRecent', no_stem=True),
+        NumericField(fieldPrefix + "Date", as_name='Date', sortable=True),
+        NumericField(fieldPrefix + "Open", as_name='Open'),
+        NumericField(fieldPrefix + "High", as_name='High'),
+        NumericField(fieldPrefix + "Low", as_name='Low'),
+        NumericField(fieldPrefix + "Close", as_name='Close'),
+        NumericField(fieldPrefix + "Volume", as_name='Volume', sortable=True),
+        NumericField(fieldPrefix + "Score", as_name='Score'),
+        TagField(fieldPrefix + "OpenInt", separator=";", as_name='OpenInt')
+    )
+
+    print("before try on Ticker")
+    try:
+        db.ft(index_name="Ticker").create_index(TickerSCHEMA, definition=TickerDefinition)
+    except redis.ResponseError:
+        db.ft(index_name="Ticker").dropindex(delete_documents=False)
+        db.ft(index_name="Ticker").create_index(TickerSCHEMA, definition=TickerDefinition)
+
+
+def isInt(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
 
 
 if __name__ == "__main__":

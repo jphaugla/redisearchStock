@@ -91,7 +91,7 @@ Note:  there are multiple API tests in the file but only one should be run at a 
 So, the tests not to be run should be commented out.  
 
   * run sample search queries   
-run sample redisearch queries as provided.  Run one at a time using
+run sample redisearch queries as provided.  Run one at a time using redis-cli
 
 ```bash
 redic-cli -f scripts/searchQueries.txt
