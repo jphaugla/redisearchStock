@@ -14,12 +14,11 @@
     <script src="bower_components/bs-typeahead/js/bootstrap-typeahead.js"></script>
     <script>
 $('input.typeahead').typeahead({
-    <!-- first attempt ajax: "http://localhost:5000/search/?search_column=TickerShort&sort_column=Volume&search_string="+input  -->
     onSelect: function(item) {
 		console.log(item);
 	},
 	ajax: {
-		url: "http://redis:5000/search/?search_column=Ticker&sort_column=Volume",
+		url: "http://localhost:5000/search/?search_column=Ticker&sort_column=Volume",
 		timeout: 200,
 		displayField: "TickerShort",
 		triggerLength: 2,

@@ -65,7 +65,7 @@ def home(path):
             search_str = request.args.get("search_string")
             sort_by = request.args.get("sort_column")
             print("search string is " + search_str)
-            TickerSearch = "@" + str(search_column) + ":" + str(search_str)
+            TickerSearch = "@" + str(search_column) + ":" + str(search_str) + "*"
             q1 = Query(TickerSearch)
             if sort_by is not None:
                 q1.sort_by(sort_by, asc=False)
@@ -84,6 +84,7 @@ def home(path):
             for i in range(min(TickerReturn.total - 1, 9)):
                 results = TickerReturn.docs[i]
                 TickerResults.append(results)
+                print(results)
             # return_string = jsonify(TickerResults, 200)
             return_string = jsonpickle.encode(TickerResults)
         # category passed in will be Category name, return Category attributes
@@ -125,8 +126,8 @@ def home(path):
              print("in the GET before call to index.html")
              response=app.send_static_file('index.html')
              response.headers['Content-Type']='text/html'
-             # return_string = response
-             return_string = "fell to else"
+             return_string = response
+
 
     return return_string
 @app.after_request # blueprint can also be app~~
