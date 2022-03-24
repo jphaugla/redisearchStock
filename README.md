@@ -1,5 +1,6 @@
 # redisearchStock
-A simple stock ticker solution based on downloaded stock files
+A simple stock ticker solution based on downloaded stock files.  Uses redisearch for an API and jquery with bootstrap ajax typeahead plugin.
+
 ## Initial project setup
 Get this github code
 ```bash 
@@ -10,8 +11,11 @@ Two options for setting the environment are given:
   * installing for mac os
   * running on linux (probably in the cloud)
 
-## Code and File discussion
+## Important Links
+[bootstrap ajax typeahead example](https://github.com/biggora/bootstrap-ajax-typeahead)
 
+### Bootstrap ajax typeahead
+This plugin needs to be in place-it is in the repository but follow the directions in the [bootstrap-ajax-typahead github](https://github.com/biggora/bootstrap-ajax-typeahead)
 
 ### Download the datafiles to the data subdirectory
 * Download stock files here
@@ -60,7 +64,8 @@ hset process_control oldest_value 20220101 current_value 20220315
 * If PROCESS_RECENTS is set, set list of recent dates to specifically set the MostRecent flag to false
   * This is needed when loading the next set of values.  E.g.  Current data is 20220315 and want to ensure three previous dates are false for MostRecent.  
 ```bash
-docker exec -it redis redis-cli < sadd remove_current 20220314 20220313 20220312 
+docker exec -it redis redis-cli
+sadd remove_current 20220314 20220313 20220312 
 ```
 * make sure the TICKER_FILE_LOCATION is good and then start the load
 ```bash
@@ -69,7 +74,8 @@ docker exec -it flask bash -c "python TickerImport.py"
 
 Can observe the load progress by watching the load for each file
 ```bash
-docker exec -it redis redis-cli hgetall ticker_load
+docker exec -it redis redis-cli 
+hgetall ticker_load
 ```
   * THIS IS HOW to start flask app server
   * However, it is already running as part of the flask container

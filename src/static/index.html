@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Hello, world!</title>
+          <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+            <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
+  </head>
+  <body>
+    <h1>Hello, world!</h1>
+   <div id="input">
+        <input class="typeahead" type="text" placeholder="Stock Codes">
+    </div>
+
+    <script src="bower_components/bs-typeahead/js/bootstrap-typeahead.js"></script>
+    <script>
+$('input.typeahead').typeahead({
+    <!-- first attempt ajax: "http://localhost:5000/search/?search_column=TickerShort&sort_column=Volume&search_string="+input  -->
+    onSelect: function(item) {
+		console.log(item);
+	},
+	ajax: {
+		url: "http://redis:5000/search/?search_column=Ticker&sort_column=Volume",
+		timeout: 200,
+		displayField: "TickerShort",
+		triggerLength: 2,
+		method: "get",
+		loadingClass: "input",
+		preDispatch: function (query) {
+			return {
+				search_string: query
+			}
+		},
+		preProcess: function (data) {
+			if (data.success === false) {
+				// Hide the list, there was some error
+				return false;
+			}
+			// We good!
+			return data;
+		}
+	}
+ });
+      </script>
+  </body>
+</html>
