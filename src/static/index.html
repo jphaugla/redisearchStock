@@ -6,19 +6,22 @@
             <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
   </head>
   <body>
-    <h1>Hello, world!</h1>
-   <div id="input">
-        <input class="typeahead" type="text" placeholder="Stock Codes">
+    <h1>Find Stock</h1>
+    <div class="well col-md-5">
+        <input id="input" class="typeahead" type="text" placeholder="Stock Codes">
+        <button class="btn btn-outline-success" type="button" id="btn_search">Search Stock</button>
     </div>
-
+    <div class="container-fluid">
+    <div class="row" id="tickers">
+    </div>
     <script src="/static/bower_components/bs-typeahead/js/bootstrap-typeahead.js"></script>
     <script>
-$('input.typeahead').typeahead({
+$('#input.typeahead').typeahead({
     onSelect: function(item) {
 		console.log(item);
 	},
 	ajax: {
-		url: "http://localhost:5000/search/?search_column=Ticker&sort_column=Volume",
+		url: "http://localhost:5000/search/?search_column=Ticker&sort_column=Volume&most_recent=true",
 		timeout: 200,
 		displayField: "TickerShort",
 		triggerLength: 2,
@@ -39,6 +42,39 @@ $('input.typeahead').typeahead({
 		}
 	}
  });
+ $("#btn_search").click(function() {
+            //alert( "Handler for .click() called." );
+            search_string=""
+            if ($("#input").val()!="") {
+                search_string="&ticker="+$("#input").val()
+            }
+            $.ajax({
+                url: "http://localhost:5000/oneticker/?sort_column=Date"+search_string
+            }).then(function(data) {
+                $("#tickers").empty()
+                for (var ticker of data) {
+                    card='<div class="card m-1 p-1" style="width: 18rem;">'
+                    card=card+'<div class="card-header">'
+                      card=card+'<h5 class="card-title">'+ticker.Date+'</h5>'
+                    card=card+'</div>'
+                    card=card+'<div class="card-body">'
+                        card=card+'<p class="card-text">'+ticker.Market+'</p>'
+                    card=card+'</div>'
+                    card=card+'<div class="card-footer">'
+                        card=card+'<p class="card-text align-bottom"><strong>close:</strong> $'+ticker.Close+'</p>'
+                        card=card+'</a>'
+                    card=card+'</div>'
+                    card=card+'</div>'
+
+                    $("#tickers").append(card);
+                }
+                //alert(res.docs)
+
+                $("#tickers").append("<b>hello</b>"+data);
+            });
+        });
+
+
       </script>
   </body>
 </html>

@@ -66,6 +66,9 @@ def home(path):
             sort_by = request.args.get("sort_column")
             print("search string is " + search_str)
             TickerSearch = "@" + str(search_column) + ":" + str(search_str) + "*"
+            most_recent = request.args.get("most_recent")
+            if most_recent is not None and most_recent == "true":
+                TickerSearch = TickerSearch + " @MostRecent:true"
             q1 = Query(TickerSearch)
             if sort_by is not None:
                 q1.sort_by(sort_by, asc=False)
@@ -88,15 +91,32 @@ def home(path):
             # return_string = jsonify(TickerResults, 200)
             return_string = jsonpickle.encode(TickerResults)
         # category passed in will be Category name, return Category attributes
-        elif path == 'category':
-            get_category = request.args.get("show_category")
-            print("reporting category is ", get_category)
-            #  retrieve the category index using the passed in category name
-            #  pull this from the zCategoryName sorted set holding category name and category id separated by colon
-            catSearch = "@Name:" + get_category
-            catReturn = db.ft(index_name="Category").search(catSearch)
-            print("number returned is " + str(catReturn.total))
-            return_string = catReturn.docs[0].json
+        elif path == 'oneticker/':
+            get_ticker = request.args.get("ticker")
+            print("reporting ticket is ", get_ticker)
+            sort_by = request.args.get("sort_column")
+            TickerSearch = "@Ticker:" + get_ticker
+            q1 = Query(TickerSearch)
+            if sort_by is not None:
+                q1.sort_by(sort_by, asc=False)
+            print("TickerSearch is " + TickerSearch)
+            TickerReturn = db.ft(index_name="Ticker").search(q1)
+            print("number returned is " + str(TickerReturn.total))
+            # print("TickerReturn")
+            # print(TickerReturn)
+            print("TickerReturn docs 0")
+            print(TickerReturn.docs[0])
+            # print("TickerReturn docs 0 id")
+            # print(TickerReturn.docs[0].id)
+            print("TickerReturn docs 0 TickerShort")
+            print(TickerReturn.docs[0].TickerShort)
+            TickerResults = []
+            for i in range(min(TickerReturn.total - 1, 9)):
+                results = TickerReturn.docs[i]
+                TickerResults.append(results)
+                print(results)
+            # return_string = jsonify(TickerResults, 200)
+            return_string = jsonpickle.encode(TickerResults)
         elif path == 'parent_category':
             get_parent = request.args.get("parent_category")
             print("reporting category is ", get_parent)
@@ -151,9 +171,9 @@ def recreateIndex():
         fieldPrefix = ""
 
     db = redis.StrictRedis(redis_server, redis_port, charset="utf-8", decode_responses=True)  # connect to server
-
-    TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score',
-                                       filter="@MostRecent=='true'")
+    # no longer filtering the index on MostRecent just selecting on it
+    # TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score', filter="@MostRecent=='true'")
+    TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score')
     TickerSCHEMA = (
         TextField(fieldPrefix + "Ticker", as_name='Ticker', no_stem=True),
         TagField(fieldPrefix + "Per", separator=";", as_name='Per'),
