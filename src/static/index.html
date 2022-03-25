@@ -55,25 +55,23 @@ $('#input.typeahead').typeahead({
                 for (var ticker of data) {
                     card='<div class="card m-1 p-1" style="width: 18rem;">'
                     card=card+'<div class="card-header">'
-                      card=card+'<h5 class="card-title">'+ticker.Date+'</h5>'
-                    card=card+'</div>'
-                    card=card+'<div class="card-body">'
-                        card=card+'<p class="card-text">'+ticker.Market+'</p>'
+                      card=card+'<h3 class="card-title">'+ticker.Date+'</h3>'
                     card=card+'</div>'
                     card=card+'<div class="card-footer">'
-                        card=card+'<p class="card-text align-bottom"><strong>close:</strong> $'+ticker.Close+'</p>'
-                        card=card+'</a>'
+                        card=card+'<p class="card-text align-bottom"><strong>open:</strong> $'+ticker.Open+' <strong>close:</strong> $'+ticker.Close+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>high:</strong> $'+ticker.High+' <strong>low:</strong> $'+ticker.Low+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>volume:</strong> '+numberWithCommas(ticker.Volume)+'</p>'
                     card=card+'</div>'
                     card=card+'</div>'
 
                     $("#tickers").append(card);
                 }
-                //alert(res.docs)
 
-                $("#tickers").append("<b>hello</b>"+data);
             });
         });
-
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 
       </script>
   </body>
