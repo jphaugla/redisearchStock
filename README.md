@@ -129,3 +129,4 @@ cd src
 pip install -r requirements.txt
 python TickerImport.py
 ```
+Go to the stock type [ahead page](http://localhost:5000) and find the desired stock
