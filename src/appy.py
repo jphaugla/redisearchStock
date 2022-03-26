@@ -77,12 +77,12 @@ def home(path):
             print("number returned is " + str(TickerReturn.total))
             # print("TickerReturn")
             # print(TickerReturn)
-            print("TickerReturn docs 0")
-            print(TickerReturn.docs[0])
+            # print("TickerReturn docs 0")
+            # print(TickerReturn.docs[0])
             # print("TickerReturn docs 0 id")
             # print(TickerReturn.docs[0].id)
-            print("TickerReturn docs 0 TickerShort")
-            print(TickerReturn.docs[0].TickerShort)
+            # print("TickerReturn docs 0 TickerShort")
+            # print(TickerReturn.docs[0].TickerShort)
             TickerResults = []
             for i in range(min(TickerReturn.total - 1, 9)):
                 results = TickerReturn.docs[i]
@@ -104,17 +104,17 @@ def home(path):
             print("number returned is " + str(TickerReturn.total))
             # print("TickerReturn")
             # print(TickerReturn)
-            print("TickerReturn docs 0")
-            print(TickerReturn.docs[0])
+            # print("TickerReturn docs 0")
+            # print(TickerReturn.docs[0])
             # print("TickerReturn docs 0 id")
             # print(TickerReturn.docs[0].id)
-            print("TickerReturn docs 0 TickerShort")
-            print(TickerReturn.docs[0].TickerShort)
+            # print("TickerReturn docs 0 TickerShort")
+            # print(TickerReturn.docs[0].TickerShort)
             TickerResults = []
             for i in range(min(TickerReturn.total - 1, 9)):
                 results = TickerReturn.docs[i]
                 TickerResults.append(results)
-                print(results)
+                # print(results)
             # return_string = jsonify(TickerResults, 200)
             return_string = jsonpickle.encode(TickerResults)
         elif path == 'parent_category':
