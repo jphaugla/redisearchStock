@@ -1,16 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Hello, world!</title>
+    <title>Ticker Search</title>
           <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
             <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
+     <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
   </head>
   <body>
-    <h1>Find Stock</h1>
-    <div class="well col-md-5">
+   <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <img src=/static/stockBoard.jpg width="80" height="60" alt="">
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <div class="d-flex">
         <input id="input" class="typeahead" type="text" placeholder="Stock Codes">
         <button class="btn btn-outline-success" type="button" id="btn_search">Search Stock</button>
     </div>
+          </div>
+        </div>
+   </nav>
     <div class="container-fluid">
     <div class="row" id="tickers">
     </div>
@@ -55,7 +63,7 @@ $('#input.typeahead').typeahead({
                 for (var ticker of data) {
                     card='<div class="card m-1 p-1" style="width: 18rem;">'
                     card=card+'<div class="card-header">'
-                      card=card+'<h3 class="card-title">'+ticker.Date+'</h3>'
+                      card=card+'<h3 class="card-title">'+(ticker.Date).substring(0,4)+"-"+(ticker.Date).substring(4,6)+"-"+(ticker.Date).substring(6)+'</h3>'
                     card=card+'</div>'
                     card=card+'<div class="card-footer">'
                         card=card+'<p class="card-text align-bottom"><strong>open:</strong> $'+ticker.Open+' <strong>close:</strong> $'+ticker.Close+'</p>'
