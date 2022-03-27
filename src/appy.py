@@ -117,31 +117,6 @@ def home(path):
                 # print(results)
             # return_string = jsonify(TickerResults, 200)
             return_string = jsonpickle.encode(TickerResults)
-        elif path == 'parent_category':
-            get_parent = request.args.get("parent_category")
-            print("reporting category is ", get_parent)
-            #  retrieve the category index using the passed in category name
-            #  pull this from the zCategoryName sorted set holding category name and category id separated by colon
-            catSearch = "@ParentCategoryName:" + get_parent
-            catReturn = db.ft(index_name="Category").search(catSearch)
-            print("number returned is " + str(catReturn.total))
-            catResults = []
-            for i in range(min(catReturn.total - 1, 9)):
-                results = catReturn.docs[i].json
-                final_results = json.loads(results)
-                # catResults.append(TickerReturn.docs[i].json)
-                catResults.append(final_results)
-            return_string = jsonify(catResults, 200)
-        elif path == 'prod':
-            get_prod = request.args.get("prodkey")
-            if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
-                return_value = db.json().get(get_prod)
-            else:
-                return_value = db.get(get_prod)
-            return_string = jsonify(return_value,200)
-        elif path == 'index':
-            recreateIndex()
-            return_string="Done"
         else:
              print("in the GET before call to index.html")
              response=app.send_static_file('index.html')
