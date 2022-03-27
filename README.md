@@ -1,6 +1,6 @@
 # redisearchStock
 A simple stock ticker solution based on downloaded stock files.  Uses redisearch for an API and jquery with bootstrap ajax typeahead plugin.
-[Type Ahead stock quote](src/static/typeaheadStocks.png)
+![](src/static/typeaheadStocks.png)
 ## Initial project setup
 Get this github code
 ```bash 
