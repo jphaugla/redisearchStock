@@ -12,11 +12,11 @@ Two options for setting the environment are given:
   * running on linux (probably in the cloud)
 
 ## Important Links
-[bootstrap ajax typeahead example](https://github.com/biggora/bootstrap-ajax-typeahead)
-[Redis Stack](https://redis.com/blog/introducing-redis-stack/)
-[Redis Search](https://redis.io/docs/stack/search/)
-[Redis Insight](https://redis.io/docs/stack/insight/)
-[Stooq stock files](https://stooq.com/db/h/)
+* [bootstrap ajax typeahead example](https://github.com/biggora/bootstrap-ajax-typeahead)
+* [Redis Stack](https://redis.com/blog/introducing-redis-stack/)
+* [Redis Search](https://redis.io/docs/stack/search/)
+* [Redis Insight](https://redis.io/docs/stack/insight/)
+* [Stooq stock files](https://stooq.com/db/h/)
 
 
 ### Bootstrap ajax typeahead
@@ -93,19 +93,6 @@ There is python running in the flask container (appy.py) listening for API calls
 cd scripts
 ./redoIndex.sh
 ```
-  * run API tests
-This postman part is not tested yet-still under development
-Easiest is to run the API tests using Postman.  Running Postman, use File->Import to import
-the following file for use with Postman-https://github.com/jphaugla/redisJSONProductCatalog/blob/main/scripts/Product-Category%20APIs.postman_collection.json
-Once the collection is imported, run each request to test the APIs.
-![Postman screen shot](images/postman-collection.png)
-Alternatively, use the commands in this file https://github.com/jphaugla/redisJSONProductCatalog/blob/main/scripts/sampleput.sh
-Make sure to use *bash* as *zsh* has issues with the curl command 
-Note:  there are multiple API tests in the file but only one should be run at a time
-So, the tests not to be run should be commented out.  
-
-  * run sample search queries   
-run sample redisearch queries as provided.  Run one at a time using redis-cli
 
 ```bash
 redic-cli -f scripts/searchQueries.txt
