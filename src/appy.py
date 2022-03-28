@@ -117,6 +117,9 @@ def home(path):
                 # print(results)
             # return_string = jsonify(TickerResults, 200)
             return_string = jsonpickle.encode(TickerResults)
+        elif path == 'index':
+            recreateIndex()
+            return_string = "Done"
         else:
              print("in the GET before call to index.html")
              response=app.send_static_file('index.html')
@@ -151,16 +154,17 @@ def recreateIndex():
     TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score')
     TickerSCHEMA = (
         TextField(fieldPrefix + "Ticker", as_name='Ticker', no_stem=True),
-        TagField(fieldPrefix + "Per", separator=";", as_name='Per'),
+        TextField(fieldPrefix + "TickerShort", as_name='TickerShort', no_stem=True),
+        # TagField(fieldPrefix + "Per", separator=";", as_name='Per'),
         TextField(fieldPrefix + "MostRecent", as_name='MostRecent', no_stem=True),
         NumericField(fieldPrefix + "Date", as_name='Date', sortable=True),
-        NumericField(fieldPrefix + "Open", as_name='Open'),
-        NumericField(fieldPrefix + "High", as_name='High'),
-        NumericField(fieldPrefix + "Low", as_name='Low'),
-        NumericField(fieldPrefix + "Close", as_name='Close'),
+        # NumericField(fieldPrefix + "Open", as_name='Open'),
+        # NumericField(fieldPrefix + "High", as_name='High'),
+        # NumericField(fieldPrefix + "Low", as_name='Low'),
+        # NumericField(fieldPrefix + "Close", as_name='Close'),
         NumericField(fieldPrefix + "Volume", as_name='Volume', sortable=True),
-        NumericField(fieldPrefix + "Score", as_name='Score'),
-        TagField(fieldPrefix + "OpenInt", separator=";", as_name='OpenInt')
+        # NumericField(fieldPrefix + "Score", as_name='Score'),
+        #TagField(fieldPrefix + "OpenInt", separator=";", as_name='OpenInt')
     )
 
     print("before try on Ticker")
