@@ -13,6 +13,11 @@ Two options for setting the environment are given:
 
 ## Important Links
 [bootstrap ajax typeahead example](https://github.com/biggora/bootstrap-ajax-typeahead)
+[Redis Stack](https://redis.com/blog/introducing-redis-stack/)
+[Redis Search](https://redis.io/docs/stack/search/)
+[Redis Insight](https://redis.io/docs/stack/insight/)
+[Stooq stock files](https://stooq.com/db/h/)
+
 
 ### Bootstrap ajax typeahead
 This plugin needs to be in place-it is in the repository but follow the directions in the [bootstrap-ajax-typahead github](https://github.com/biggora/bootstrap-ajax-typeahead)
