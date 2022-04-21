@@ -130,7 +130,7 @@ def home(path):
             # return_string = jsonify(TickerResults, 200)
             return_string = jsonpickle.encode(TickerResults)
         elif path == 'index':
-            recreateIndex()
+            recreateIndex(db)
             return_string = "Done"
         else:
              print("in the GET before call to index.html")
@@ -149,7 +149,7 @@ def after_request(response):
     return response
 
 
-def recreateIndex():
+def recreateIndex(db):
     #  if environment is set to write to
     #  jason change the index type and the field prefix
     #  for JSON the field prefix is $.   for hash there is none
@@ -160,7 +160,6 @@ def recreateIndex():
         useIndexType = IndexType.HASH
         fieldPrefix = ""
 
-    db = redis.StrictRedis(redis_server, redis_port, charset="utf-8", decode_responses=True)  # connect to server
     # no longer filtering the index on MostRecent just selecting on it
     # TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score', filter="@MostRecent=='true'")
     TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score')
