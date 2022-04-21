@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-searchstock # deployment name
+  labels:
+    app: redis-searchstock # deployment label
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-searchstock # which pods is the deployment managing, as defined by the pod template
+  template: # pod template
+    metadata:
+      labels:
+        app: redis-searchstock 
+    spec:  
+      containers:
+      - name:  redis-searchstock  # Container name 
+        image: jphaugla/redis-searchstock:latest #repo/image:tag
+        imagePullPolicy: Always 
+        ports:  
+         - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: searchstock-config
+        resources:
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+            requests:
+              cpu: "1000m"
+              memory: "1024Mi"
+        volumeMounts:
+        - mountPath: "/data"
+          name: datapvc
+      volumes:
+        - name: datapvc
+          persistentVolumeClaim:
+            claimName: pvc-demo 
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-searchstock-service       # name should not be 'redis-lb' 
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: redis-searchstock
+---

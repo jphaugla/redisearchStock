@@ -78,10 +78,10 @@ def process_file(file_name):
         redis_port = 6379
         # print("no passed in redis port variable ")
 
-
     if environ.get('REDIS_PASSWORD') is not None:
         redis_password = environ.get('REDIS_PASSWORD')
         print("passed in redis password is " + redis_password)
+
 
     if redis_password is not None:
         conn = redis.StrictRedis(redis_server, redis_port, password=redis_password,

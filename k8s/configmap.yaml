@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searchstock-config
+  labels:
+    app: redis-searchstock
+    tier: redis
+data:
+  CORE_POOLSIZE: "20"
+  REDIS_PASSWORD: S5mzKwbn
+  REDIS_PORT: "11536"
+  TICKER_FILE_LOCATION: "/data/daily/us/nasdaq"
+  PROCESSES: "6"
+  PYTHONBUFFERED: "0"
+  WRITE_JSON: "false"
+  PROCESS_DATES: "true"
+  PROCESS_RECENTS: "false"
+  REDIS_SERVER: "10.28.16.188"

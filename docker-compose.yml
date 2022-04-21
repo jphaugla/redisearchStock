@@ -25,7 +25,7 @@ services:
       - redis
 
   flask:
-    image: webapp-flask
+    image: redis-searchstock
     container_name: flask
     environment:
       - REDIS_SERVER=redis

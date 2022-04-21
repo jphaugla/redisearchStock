@@ -30,12 +30,23 @@ if environ.get('REDIS_PORT') is not None:
 else:
     redis_port = 6379
     print("no passed in redis port variable ")
+
 print("beginning of appy.py now")
+
 @app.route('/', defaults={'path': ''}, methods=['PUT', 'GET'])
 @app.route('/<path:path>', methods=['PUT', 'GET', 'DELETE'])
 def home(path):
     print("the request method is " + request.method + " path is " + path)
-    db = redis.StrictRedis(redis_server, redis_port, charset="utf-8", decode_responses=True)  # connect to server
+    if environ.get('REDIS_PASSWORD') is not None:
+        redis_password = environ.get('REDIS_PASSWORD')
+        print("passed in redis password is " + redis_password)
+
+    if redis_password is not None:
+        db = redis.StrictRedis(redis_server, redis_port, password=redis_password,
+                                 decode_responses=True)
+    else:
+        db = redis.StrictRedis(redis_server, redis_port, decode_responses=True)
+
     if request.method == 'PUT':
         # if prod_idx is set it is a replace
         # if proc_idx is not set, is insert

@@ -98,10 +98,7 @@ cd scripts
 redic-cli -f scripts/searchQueries.txt
 ```
 
-##  Notes for running outside of Docker
-Follow most of the same steps as above with some changes
-
-### Instead of docker to execute, use python virtualenv
+## Instead of docker to execute, use python virtualenv
   * create a virtualenv
 ```bash
 cd src
@@ -121,4 +118,73 @@ cd src
 pip install -r requirements.txt
 python TickerImport.py
 ```
+
+## Instead, use kubernetes
+This example is showing GKE steps-adjust accordingly for other versions
+### Install Redis Enterprise k8s
+* Get to K8 namespace directory
+```bash
+cd $DEMO
+```
+* Follow [Redis Enterprise k8s installation instructions](https://github.com/RedisLabs/redis-enterprise-k8s-docs#installation) all the way through to step 4.  Use the demo namespace as instructed.
+* For Step 5, the admission controller steps are needed but the webhook instructions are not necessary
+* Don't do Step 6 as the databases for this github are in the k8s subdirectory of this github
+* Create redis enterprise database.  
+```bash
+kubectl apply -f redis-enterprise-database.yml
+
+```
+* Try cluster username and password script as well as databases password and port information scripts
+```bash
+./getDatabasePw.sh
+./getClusterUnPw.sh
+```
+#### Add redisinsights
+These instructions are based on [Install RedisInsights on k8s](https://docs.redis.com/latest/ri/installing/install-k8s/)
+&nbsp;
+The above instructions have two options for installing redisinights, this uses the second option to install[ without a service](https://docs.redis.com/latest/ri/installing/install-k8s/#create-the-redisinsight-deployment-without-a-service) (avoids creating a load balancer)
+* copy the yml file above into a file named *redisinsight.yml*
+* create redisinsights
+```bash
+kubectl apply -f redisinsight.yaml
+kubectl port-forward deployment/redisinsight 8001
+```
+* from chrome or firefox open the browser using http://localhost:8001
+* Click "I already have a database"
+* Click "Connect to Redis Database"
+* Create Connection to target redis database with following parameter entries
+
+| Key      | Value                                     |
+|----------|-------------------------------------------|
+| host     | redis-enterprise-database.demo            |
+| port     | 18154 (get from ./getDatabasepw.sh above) |
+| name     | TargetDB                                  |
+| Username | (leave blank)                             |
+| Password | DrCh7J31 (from ./getDatabasepw.sh above) |
+* click ok
+
+## Deploy redis-searchstock on Kubernetes
+* must log into docker to have access to the docker image
+```bash
+docker login
+```
+* modify, create the environmental variables by editing configmap.yml
+  * can find the IP addresses and ports for each of the databases by running ```kubectl get services```
+  * put the database password in for the redis password by running ```getDatabasePw```
+* create the configuration map
+```bash
+cd k8s
+kubectl apply -f configmap.yaml
+```
+* deploy the redis-searchstock
+```bash
+kubectl apply -f stock.yml
+```
+* port forward and continue with testing of the APIs
+  * NOTE:  get exact name use ```kubectl get pods```
+```bash
+kubectl port-forward redis-searchstock-c568d9b6b-z2mnf 5000
+```
+
+
 Go to the stock type [ahead page](http://localhost:5000) and find the desired stock

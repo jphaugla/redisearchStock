@@ -1,0 +1,14 @@
+apiVersion: app.redislabs.com/v1alpha1
+kind: RedisEnterpriseDatabase
+metadata:
+  name: redis-enterprise-database
+spec:
+  memorySize: 10GB
+  persistence: "snapshotEvery1Hour"
+  rolesPermissions:
+  - type: redis-enterprise
+    role: "DB Member"
+    acl: "Not Dangerous"
+  modulesList: 
+  - name: search
+    version: 2.2.6
