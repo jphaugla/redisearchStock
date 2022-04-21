@@ -36,6 +36,7 @@ print("beginning of appy.py now")
 @app.route('/', defaults={'path': ''}, methods=['PUT', 'GET'])
 @app.route('/<path:path>', methods=['PUT', 'GET', 'DELETE'])
 def home(path):
+    redis_password = ""
     print("the request method is " + request.method + " path is " + path)
     if environ.get('REDIS_PASSWORD') is not None:
         redis_password = environ.get('REDIS_PASSWORD')
