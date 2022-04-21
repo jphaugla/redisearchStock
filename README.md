@@ -1,43 +1,71 @@
 # redisearchStock
-A simple stock ticker solution based on downloaded stock files.  Uses redisearch for an API and jquery with bootstrap ajax typeahead plugin.
-![](src/static/typeaheadStocks.png)
-## Initial project setup
-Get this github code
-```bash 
-get clone https://github.com/jphaugla/redisearchStock.git
-```
-Two options for setting the environment are given:  
-  * run with docker-compose using a flask and redis container
-  * installing for mac os
-  * running on linux (probably in the cloud)
+A stock ticker solution typeahead solution based on downloaded stock files.  Uses Python redisearch for an API and jquery with bootstrap ajax typeahead plugin.
+ 
+![app screen](src/static/typeaheadStocks.png)
 
-## Important Links
+## Outline
+
+- [Overview](#overview)
+- [Initial Project Setup](#initial-project-setup)
+- [Important Links](#important-linksnotes)
+- [Instructions](#instructions)
+  - [Download the datafiles](#download-the-datafiles)
+  - [Create Environment](#create-environment)
+  - [Multiple Deployment options](#multiple-options-for-creating-the-environment)
+  - [Docker Compose](#docker-compose-startup)
+    - [Prepare the Load](#prepare-the-load)
+    - [Start Ticker Load](#start-ticker-load)
+  - [Deploy Python on Linux](#deploy-python)
+    - [Create python environment](#create-python-environment)
+    - [Start Ticker Load on Python](#start-ticker-on-python)
+  - [Kubernetes](#kubernetes)
+    - [Install Redis Enterprise](#install-redis-enterprise-k8s)
+    - [Add Redisinsights](#add-redisinsights)
+    - [Deploy application](#deploy-redis-searchstock-on-kubernetes)
+  - [Use the Application](#use-the-application)
+    - [Create Index](#create-index)
+- [Cleaning up](#cleaning-up)
+
+## Overview
+
+Uses python to load stock market daily values from download flat files.  Using a redisearch index, a web browser application written in jquery uses typeahead prioritizing stocks with the highest volume to provide type ahead suggestions.  When a stock is selected, more detail is displayed on the stock history.
+
+## Important Links/Notes
 * [bootstrap ajax typeahead example](https://github.com/biggora/bootstrap-ajax-typeahead)
 * [Redis Stack](https://redis.com/blog/introducing-redis-stack/)
 * [Redis Search](https://redis.io/docs/stack/search/)
 * [Redis Insight](https://redis.io/docs/stack/insight/)
 * [Stooq stock files](https://stooq.com/db/h/)
-
+* [Run Python on k8s](https://opensource.com/article/18/1/running-python-application-kubernetes)
+* [k8s persistent volume claim](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#claims-as-volumes)
+* [GKE persistent volume claims](https://cloud.google.com/kubernetes-engine/docs/concepts/persistent-volumes)
 
 ### Bootstrap ajax typeahead
-This plugin needs to be in place-it is in the repository but follow the directions in the [bootstrap-ajax-typahead github](https://github.com/biggora/bootstrap-ajax-typeahead)
+This plugin is in the repository so not setting is needed.  To learn more-follow the directions in the [bootstrap-ajax-typahead github](https://github.com/biggora/bootstrap-ajax-typeahead)
 
-### Download the datafiles to the data subdirectory
+## Instructions
+
+### Download the datafiles
 * Download stock files here
  [Stooq stock files](https://stooq.com/db/h/)
 * Once downloaded, move the file (it should be a directory called *data*) to the main redisearchStock directory
   * Can combine the various stooq files at the daily level by including world, us, etc under this daily directory
   * There is a separate file for each *stock* or *currency* with a long history of data.  See instructions below for setting the environment variables to limit history load
+  * To simplify things, best to remove the spaces in the file directory such as "nasdaq stocks".  The spaces are dealt with in docker-compose but never cleaned this up in k8s.  Just easier to eliminate the spaces.
   
+### Create environment
+Clone the github 
+```bash 
+get clone https://github.com/jphaugla/redisearchStock.git
+```
 
-### Set environment
+#### Set environment variables
 
-The docker compose file has the environment variables set for the redis connection and the location of the data files.
-This code uses redisearch.  The redis database must have both of these modules installed.
-As of this writing, this redismod docker image (which includes these modules) does not work on the m1 arm64 based mac.  
-Default docker-compose is set to redismod.  Check the environment variables for appropriateness. Especially check the TICKER_DATA_LOCATION because loading all of 
+The docker compose file has the environment variables set for the redis connection and the location of the data files.  In k8s, the environment is set in the configmap.
+This code uses redisearch.  The redis database must have redisearch installed.  In docker, the redis stack image contains all the modules.   In k8s, redisearch is added in the database yaml file. 
+Check the environment variables for appropriateness. Especially check the TICKER_DATA_LOCATION because loading all of 
 the US tickers with all of the history can be a lot of data on a laptop.  Here is an explanation of the environment variables.
-Modify these values in docker-compose.yml
+Modify these values in docker-compose.yml or in the configmap for k8s.
 
 | variable             | Original Value | Desccription                                                                                                                                                            |
 |----------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -49,19 +77,24 @@ Modify these values in docker-compose.yml
 | PROCESS_DATES        | true           | have date-based logic instead of just a simple initial load.  Allows for <br/> skipping any records old than a particular date (requires creation of specific redis hash) |   
 | PROCESS_RECENTS      | false          | will set most recent flag for specified keys back to false    (requires creation of specific redis set)                                                             |
 
-The created index is filtered to only the records where MostRecent is set to true
 
-## docker compose startup
-Build just needs to be done initially
+### Multiple options for creating the environment:  
+  * run with docker-compose using a flask and redis container
+  * installing for mac os
+  * running on linux (probably in the cloud)
+  * running on kubernetes (example uses GKE)
+
+### docker compose 
+Build just needs to be done initially.  NOTE:  if building a new image for k8s, remove a comment to include the copy of the src directory into the image.
 ```bash
 docker-compose build
 docker-compose up -d 
 ```
 
-
-### load Tickers
+#### Prepare the load
 * If PROCESS_DATES is set, these entries should be made (customize as needed)
   * This will load all the values for 2022 and set the current data to 20220315
+  * In k8s, will do next steps using included redisinsight image on port 8001
 ```bash
 docker exec -it redis redis-cli 
 hset process_control oldest_value 20220101 current_value 20220315 
@@ -72,6 +105,8 @@ hset process_control oldest_value 20220101 current_value 20220315
 docker exec -it redis redis-cli
 sadd remove_current 20220314 20220313 20220312 
 ```
+
+#### Start Ticker Load
 * make sure the TICKER_FILE_LOCATION is good and then start the load
 ```bash
 docker exec -it flask bash -c "python TickerImport.py"
@@ -87,58 +122,59 @@ hgetall ticker_load
  ```bash
 docker exec -it flask bash -c "python appy.py"
  ```
-### Create Index
-There is python running in the flask container (appy.py) listening for API calls.  One of the API calls will recreate the index.  Use the flowing script to create the index
-```bash
-cd scripts
-./redoIndex.sh
-```
 
-```bash
-redic-cli -f scripts/searchQueries.txt
-```
 
-## Instead of docker to execute, use python virtualenv
-  * create a virtualenv
+
+
+### Deploy Python
+
+Can be issues with running flask on linux at the time of installing requirements files
+#### create python environment
 ```bash
 cd src
 python3 -m venv venv
 source venv/bin/activate
 ```
-   * Use an environment file for locations
-   * Need to make sure the data location variables are set correctly
-   * Can also set the number of concurrent processes for the client using the "PROCESSES" environment variable
+* Use an environment file for locations
+* Need to make sure the data location variables are set correctly
+* Can also set the number of concurrent processes for the client using the "PROCESSES" environment variable
 
 ```bash
 source scripts/app.env
 ```
-  * execute python scripts from the src directory
+#### Start Ticker on Python
+* execute python scripts from the src directory
+* if trouble with installing requirements, here are some links
+[Flask on AWS Linux 2](https://thecodinginterface.com/blog/flask-aws-ec2-deployment/)
+[Flask on Ubuntu](https://linuxize.com/post/how-to-install-flask-on-ubuntu-20-04/)
+[Flask on RedHat](https://developers.redhat.com/blog/2018/06/05/install-python-flask-on-rhel)
 ```bash
 cd src
 pip install -r requirements.txt
 python TickerImport.py
 ```
 
-## Instead, use kubernetes
+### Kubernetes
 This example is showing GKE steps-adjust accordingly for other versions
-### Install Redis Enterprise k8s
+#### Install Redis Enterprise k8s
 * Get to K8 namespace directory
 ```bash
-cd $DEMO
+cd k8s
 ```
 * Follow [Redis Enterprise k8s installation instructions](https://github.com/RedisLabs/redis-enterprise-k8s-docs#installation) all the way through to step 4.  Use the demo namespace as instructed.
 * For Step 5, the admission controller steps are needed but the webhook instructions are not necessary
 * Don't do Step 6 as the databases for this github are in the k8s subdirectory of this github
 * Create redis enterprise database.  
+
 ```bash
 kubectl apply -f redis-enterprise-database.yml
-
 ```
-* Try cluster username and password script as well as databases password and port information scripts
+* Try cluster username and password script as well as databases password and port information scripts.
 ```bash
 ./getDatabasePw.sh
 ./getClusterUnPw.sh
 ```
+
 #### Add redisinsights
 These instructions are based on [Install RedisInsights on k8s](https://docs.redis.com/latest/ri/installing/install-k8s/)
 &nbsp;
@@ -163,15 +199,18 @@ kubectl port-forward deployment/redisinsight 8001
 | Password | DrCh7J31 (from ./getDatabasepw.sh above) |
 * click ok
 
-## Deploy redis-searchstock on Kubernetes
-* must log into docker to have access to the docker image
+#### Deploy redis-searchstock on Kubernetes
+
+* must [log into docker](https://docs.docker.com/engine/reference/commandline/login/) to have access to the docker image
 ```bash
 docker login
 ```
 * modify, create the environmental variables by editing configmap.yml
   * can find the IP addresses and ports for each of the databases by running ```kubectl get services```
-  * put the database password in for the redis password by running ```getDatabasePw```
-* create the configuration map
+  * In the example below the IP address for the REDIS_HOST in the configmap.yaml is *10.28.16.188*
+![services](src/static/k8sgetservices.png)
+  * get the database password by running ```getDatabasePw```.  Put the returned password the configmap REDIS_PASSWORD 
+* apply the configuration map
 ```bash
 cd k8s
 kubectl apply -f configmap.yaml
@@ -186,5 +225,17 @@ kubectl apply -f stock.yml
 kubectl port-forward redis-searchstock-c568d9b6b-z2mnf 5000
 ```
 
+## Use the application
 
+### Create Index
+There is python running in the flask container (appy.py) listening for API calls.  One of the API calls will recreate the index.  Use the following script to create the index
+```bash
+cd scripts
+./redoIndex.sh
+```
 Go to the stock type [ahead page](http://localhost:5000) and find the desired stock
+
+These are a group of sample redis-cli queries to see 
+```bash
+redic-cli -f scripts/searchQueries.txt
+```
