@@ -6,3 +6,6 @@ ft.search Ticker "@MostRecent:true"
 ft.search Ticker "@Ticker:ECNS.US @MostRecent:true"
 # this is type ahead query
 ft.search Ticker "@Ticker:sa* @MostRecent:true" SORTBY Volume DESC RETURN 1 Ticker
+# graph
+ft.search Ticker "@Ticker:ECNS.US" SORTBY Date DESC Return 1 Close
+
