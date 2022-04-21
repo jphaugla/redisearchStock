@@ -86,7 +86,8 @@ def home(path):
                 q1.sort_by(sort_by, asc=False)
             print("TickerSearch is " + TickerSearch)
             TickerReturn = db.ft(index_name="Ticker").search(q1)
-            print("number returned is " + str(TickerReturn.total))
+            print("total number returned is " + str(TickerReturn.total))
+            print("page number " + str(len(TickerReturn.docs)))
             # print("TickerReturn")
             # print(TickerReturn)
             # print("TickerReturn docs 0")
@@ -96,7 +97,7 @@ def home(path):
             # print("TickerReturn docs 0 TickerShort")
             # print(TickerReturn.docs[0].TickerShort)
             TickerResults = []
-            for i in range(min(TickerReturn.total - 1, 9)):
+            for i in range(len(TickerReturn.docs) -1):
                 results = TickerReturn.docs[i]
                 TickerResults.append(results)
                 print(results)
@@ -108,12 +109,13 @@ def home(path):
             print("reporting ticket is ", get_ticker)
             sort_by = request.args.get("sort_column")
             TickerSearch = "@Ticker:" + get_ticker
-            q1 = Query(TickerSearch)
+            q1 = Query(TickerSearch).paging(0, 200)
             if sort_by is not None:
                 q1.sort_by(sort_by, asc=False)
             print("TickerSearch is " + TickerSearch)
             TickerReturn = db.ft(index_name="Ticker").search(q1)
             print("number returned is " + str(TickerReturn.total))
+            print("page number " + str(len(TickerReturn.docs)))
             # print("TickerReturn")
             # print(TickerReturn)
             # print("TickerReturn docs 0")
@@ -123,7 +125,7 @@ def home(path):
             # print("TickerReturn docs 0 TickerShort")
             # print(TickerReturn.docs[0].TickerShort)
             TickerResults = []
-            for i in range(min(TickerReturn.total - 1, 9)):
+            for i in range(len(TickerReturn.docs) -1):
                 results = TickerReturn.docs[i]
                 TickerResults.append(results)
                 # print(results)
