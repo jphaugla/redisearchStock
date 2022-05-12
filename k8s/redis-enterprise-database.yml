@@ -3,12 +3,13 @@ kind: RedisEnterpriseDatabase
 metadata:
   name: redis-enterprise-database
 spec:
-  memorySize: 10GB
+  memorySize: 4GB
   persistence: "snapshotEvery1Hour"
+  replication: true
   rolesPermissions:
   - type: redis-enterprise
     role: "DB Member"
     acl: "Not Dangerous"
   modulesList: 
   - name: search
-    version: 2.2.6
+    version: 2.4.6

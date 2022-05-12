@@ -84,7 +84,7 @@ Modify these values in docker-compose.yml or in the configmap for k8s.
   * running on linux (probably in the cloud)
   * running on kubernetes (example uses GKE)
 
-### docker compose 
+### Docker Compose 
 Build just needs to be done initially.  NOTE:  if building a new image for k8s, remove a comment to include the copy of the src directory into the image.
 ```bash
 docker-compose build
@@ -162,18 +162,56 @@ This example is showing GKE steps-adjust accordingly for other versions
 cd k8s
 ```
 * Follow [Redis Enterprise k8s installation instructions](https://github.com/RedisLabs/redis-enterprise-k8s-docs#installation) all the way through to step 4.  Use the demo namespace as instructed.
-* For Step 5, the admission controller steps are needed but the webhook instructions are not necessary
+* For Step 5 
+  * the admission controller steps are not necessary
+  * but the webhook instructions are not necessary
 * Don't do Step 6 as the databases for this github are in the k8s subdirectory of this github
-* Create redis enterprise database.  
 
+##### Create redis enterprise database.
+###### Verify cluster is ready
+* check health using kubectl
+```bash
+kubectl get all
+kubectl get rec
+kubectl get pods
+```
+* check enterprise node cluster ui (optional steps just for demonstration purposes)
+```bash
+./getClusterUnPw.sh
+```
+* port forward so can access the redis cluster 
+```bash
+kubectl port-forward service/rec-ui 8443
+```
+* [https://localhost:8443](https://localhost:8443)
+##### Create redis database
 ```bash
 kubectl apply -f redis-enterprise-database.yml
 ```
-* Try cluster username and password script as well as databases password and port information scripts.
+##### verify database
+```bash
+kubectl get redb/redis-enterprise-database -o yaml
+kubectl port-forward service/redis-enterprise-database 10740
+```
+* connect to redis-cli - use the password and port from the output of ./getDatabasePw.sh
 ```bash
 ./getDatabasePw.sh
-./getClusterUnPw.sh
+redis-cli -p 16379 -a rhliu76
 ```
+* log into redis enterprise node and use rladmin
+```bash
+kubectl exec -it rec-0 -- bash
+rladmin status extra all
+```
+##### change database
+* can make changes to redis database from controller and verify in either rladmin or in the GUI
+* use [https://localhost:8443](https://localhost:8443) to view the changes
+* modify redis-enterprise-database.yml to enable replication and to increase database size
+```bash
+edit redis-enterprise-database.yml
+kubectl apply -f redis-enterprise-database.yml
+```
+* will see these changes in the management ui and in rladmin
 
 #### Add redisinsights
 These instructions are based on [Install RedisInsights on k8s](https://docs.redis.com/latest/ri/installing/install-k8s/)
