@@ -3,9 +3,9 @@ kind: RedisEnterpriseDatabase
 metadata:
   name: redis-enterprise-database
 spec:
-  memorySize: 4GB
+  memorySize: 2GB
   persistence: "snapshotEvery1Hour"
-  replication: true
+  # replication: true
   rolesPermissions:
   - type: redis-enterprise
     role: "DB Member"

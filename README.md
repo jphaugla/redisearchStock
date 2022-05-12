@@ -189,13 +189,17 @@ kubectl port-forward service/rec-ui 8443
 kubectl apply -f redis-enterprise-database.yml
 ```
 ##### verify database
+* check for database in [management ui](https://localhost:8443)
+* check database yaml output
+* get port and password for database
+* port-forward to the database
 ```bash
 kubectl get redb/redis-enterprise-database -o yaml
+./getDatabasePw.sh
 kubectl port-forward service/redis-enterprise-database 10740
 ```
 * connect to redis-cli - use the password and port from the output of ./getDatabasePw.sh
 ```bash
-./getDatabasePw.sh
 redis-cli -p 16379 -a rhliu76
 ```
 * log into redis enterprise node and use rladmin
@@ -217,7 +221,7 @@ kubectl apply -f redis-enterprise-database.yml
 These instructions are based on [Install RedisInsights on k8s](https://docs.redis.com/latest/ri/installing/install-k8s/)
 &nbsp;
 The above instructions have two options for installing redisinights, this uses the second option to install[ without a service](https://docs.redis.com/latest/ri/installing/install-k8s/#create-the-redisinsight-deployment-without-a-service) (avoids creating a load balancer)
-* copy the yml file above into a file named *redisinsight.yml*
+* copy the yml file above into a file named *redisinsight.yml* (this file is already in the k8s directory)
 * create redisinsights
 ```bash
 kubectl apply -f redisinsight.yaml
