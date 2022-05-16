@@ -224,7 +224,7 @@ The above instructions have two options for installing redisinights, this uses t
 * copy the yml file above into a file named *redisinsight.yml* (this file is already in the k8s directory)
 * create redisinsights
 ```bash
-kubectl apply -f redisinsight.yaml
+kubectl apply -f redisinsight.yml
 kubectl port-forward deployment/redisinsight 8001
 ```
 * from chrome or firefox open the browser using http://localhost:8001
@@ -267,6 +267,15 @@ kubectl apply -f stock.yml
 kubectl port-forward redis-searchstock-c568d9b6b-z2mnf 5000
 ```
 
+#### Memtier benchmark
+Can also optionally deploy memtier benchmark as a pod in the cluster
+Before adding memtier.yml, must have extra node and then label the node
+```bash
+kubectl label nodes gke-jph-k8s-cluster-default-pool-6ecc6b17-zllk app=memtier
+kubectl apply -f memtier.yml
+```
+
+Use redisinsights or the management UI to observe the benchmark results
 ## Use the application
 
 ### Create Index
