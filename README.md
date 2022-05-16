@@ -22,6 +22,7 @@ A stock ticker solution typeahead solution based on downloaded stock files.  Use
     - [Install Redis Enterprise](#install-redis-enterprise-k8s)
     - [Add Redisinsights](#add-redisinsights)
     - [Deploy application](#deploy-redis-searchstock-on-kubernetes)
+    - [Add Memtier Benchmark](#memtier-benchmark)
   - [Use the Application](#use-the-application)
     - [Create Index](#create-index)
 - [Cleaning up](#cleaning-up)
