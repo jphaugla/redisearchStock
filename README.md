@@ -9,8 +9,8 @@ A stock ticker solution typeahead solution based on downloaded stock files.  Use
 - [Initial Project Setup](#initial-project-setup)
 - [Important Links](#important-linksnotes)
 - [Instructions](#instructions)
-  - [Download the datafiles](#download-the-datafiles)
   - [Create Environment](#create-environment)
+  - [Download the datafiles](#download-the-datafiles)
   - [Multiple Deployment options](#multiple-options-for-creating-the-environment)
   - [Docker Compose](#docker-compose-startup)
     - [Prepare the Load](#prepare-the-load)
@@ -46,6 +46,12 @@ This plugin is in the repository so not setting is needed.  To learn more-follow
 
 ## Instructions
 
+### Create environment
+Clone the github 
+```bash 
+get clone https://github.com/jphaugla/redisearchStock.git
+```
+
 ### Download the datafiles
 * Download stock files here
  [Stooq stock files](https://stooq.com/db/h/)
@@ -54,19 +60,14 @@ This plugin is in the repository so not setting is needed.  To learn more-follow
   * There is a separate file for each *stock* or *currency* with a long history of data.  See instructions below for setting the environment variables to limit history load
   * To simplify things, best to remove the spaces in the file directory such as "nasdaq stocks".  The spaces are dealt with in docker-compose but never cleaned this up in k8s.  Just easier to eliminate the spaces.
   
-### Create environment
-Clone the github 
-```bash 
-get clone https://github.com/jphaugla/redisearchStock.git
-```
-
 #### Set environment variables
 
 The docker compose file has the environment variables set for the redis connection and the location of the data files.  In k8s, the environment is set in the configmap.
 This code uses redisearch.  The redis database must have redisearch installed.  In docker, the redis stack image contains all the modules.   In k8s, redisearch is added in the database yaml file. 
 Check the environment variables for appropriateness. Especially check the TICKER_DATA_LOCATION because loading all of 
 the US tickers with all of the history can be a lot of data on a laptop.  Here is an explanation of the environment variables.
-Modify these values in docker-compose.yml or in the configmap for k8s.
+Modify these values in docker-compose.yml or in the configmap for k8s.  If outside of a container, there is a file created with 
+environment variable at scripts/app.env.
 
 | variable             | Original Value | Desccription                                                                                                                                                            |
 |----------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -98,7 +99,7 @@ docker-compose up -d
   * In k8s, will do next steps using included redisinsight image on port 8001
 ```bash
 docker exec -it redis redis-cli 
-hset process_control oldest_value 20220101 current_value 20220315 
+hset process_control oldest_value 20220101 current_value 20220414 
 ```
 * If PROCESS_RECENTS is set, set list of recent dates to specifically set the MostRecent flag to false
   * This is needed when loading the next set of values.  E.g.  Current data is 20220315 and want to ensure three previous dates are false for MostRecent.  

@@ -13,7 +13,6 @@ from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from redis.commands.search.query import NumericFilter, Query
 import jsonpickle
 
-
 app = Flask(__name__)
 app.debug = True
 bootstrap = Bootstrap()
@@ -33,10 +32,12 @@ else:
 
 print("beginning of appy.py now")
 
+
 @app.route('/', defaults={'path': ''}, methods=['PUT', 'GET'])
 @app.route('/<path:path>', methods=['PUT', 'GET', 'DELETE'])
 def home(path):
     redis_password = ""
+    return_string = ""
     print("the request method is " + request.method + " path is " + path)
     if environ.get('REDIS_PASSWORD') is not None:
         redis_password = environ.get('REDIS_PASSWORD')
@@ -44,7 +45,7 @@ def home(path):
 
     if redis_password is not None:
         db = redis.StrictRedis(redis_server, redis_port, password=redis_password,
-                                 decode_responses=True)
+                               decode_responses=True)
     else:
         db = redis.StrictRedis(redis_server, redis_port, decode_responses=True)
 
@@ -80,29 +81,37 @@ def home(path):
             TickerSearch = "@" + str(search_column) + ":" + str(search_str) + "*"
             most_recent = request.args.get("most_recent")
             if most_recent is not None and most_recent == "true":
-                TickerSearch = TickerSearch + " @MostRecent:true"
+                TickerSearch = TickerSearch + " @MostRecent:{ true }"
             q1 = Query(TickerSearch)
             if sort_by is not None:
                 q1.sort_by(sort_by, asc=False)
-            print("TickerSearch is " + TickerSearch)
+            print("TickerSearch is " + TickerSearch, flush=True)
             TickerReturn = db.ft(index_name="Ticker").search(q1)
-            print("total number returned is " + str(TickerReturn.total))
+            print("total number returned is " + str(TickerReturn.total), flush=True)
             print("page number " + str(len(TickerReturn.docs)))
             # print("TickerReturn")
             # print(TickerReturn)
             # print("TickerReturn docs 0")
-            # print(TickerReturn.docs[0])
-            # print("TickerReturn docs 0 id")
-            # print(TickerReturn.docs[0].id)
-            # print("TickerReturn docs 0 TickerShort")
-            # print(TickerReturn.docs[0].TickerShort)
+            print("docs array 0 ", flush=True)
+            print(TickerReturn.docs[0], flush=True)
+            print("TickerReturn docs 0 id")
+            print(TickerReturn.docs[0].id, flush=True)
+            # print("TickerReturn docs 0 json", flush=True)
+            # print(TickerReturn.docs[0].json, flush=True)
+            # print("TickerReturn docs 0 json TickerShort", flush=True)
+            # print(TickerReturn.docs[0].json.Market, flush=True)
             TickerResults = []
-            for i in range(len(TickerReturn.docs) -1):
+            for i in range(len(TickerReturn.docs) - 1):
+                # this does not work with json as the return structure is different
                 results = TickerReturn.docs[i]
                 TickerResults.append(results)
-                print(results)
+                print("results prints")
+                print(results, flush=True)
             # return_string = jsonify(TickerResults, 200)
             return_string = jsonpickle.encode(TickerResults)
+            # return_string = TickerResults
+            print("final return string", flush=True)
+            print(return_string, flush=True)
         # category passed in will be Category name, return Category attributes
         elif path == 'oneticker/':
             get_ticker = request.args.get("ticker")
@@ -125,7 +134,7 @@ def home(path):
             # print("TickerReturn docs 0 TickerShort")
             # print(TickerReturn.docs[0].TickerShort)
             TickerResults = []
-            for i in range(len(TickerReturn.docs) -1):
+            for i in range(len(TickerReturn.docs) - 1):
                 results = TickerReturn.docs[i]
                 TickerResults.append(results)
                 # print(results)
@@ -135,18 +144,19 @@ def home(path):
             recreateIndex(db)
             return_string = "Done"
         else:
-             print("in the GET before call to index.html")
-             response=app.send_static_file('index.html')
-             response.headers['Content-Type']='text/html'
-             return_string = response
-
+            print("in the GET before call to index.html")
+            response = app.send_static_file('index.html')
+            response.headers['Content-Type'] = 'text/html'
+            return_string = response
 
     return return_string
-@app.after_request # blueprint can also be app~~
+
+
+@app.after_request  # blueprint can also be app~~
 def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE'
-    if (response.headers['Content-Type']!='text/html'):
+    if (response.headers['Content-Type'] != 'text/html'):
         response.headers['Content-Type'] = 'application/json'
     return response
 
@@ -164,12 +174,12 @@ def recreateIndex(db):
 
     # no longer filtering the index on MostRecent just selecting on it
     # TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score', filter="@MostRecent=='true'")
-    TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score')
+    TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType)
     TickerSCHEMA = (
         TextField(fieldPrefix + "Ticker", as_name='Ticker', no_stem=True),
         TextField(fieldPrefix + "TickerShort", as_name='TickerShort', no_stem=True),
         # TagField(fieldPrefix + "Per", separator=";", as_name='Per'),
-        TextField(fieldPrefix + "MostRecent", as_name='MostRecent', no_stem=True),
+        TagField(fieldPrefix + "MostRecent", as_name='MostRecent'),
         NumericField(fieldPrefix + "Date", as_name='Date', sortable=True),
         # NumericField(fieldPrefix + "Open", as_name='Open'),
         # NumericField(fieldPrefix + "High", as_name='High'),
@@ -177,7 +187,7 @@ def recreateIndex(db):
         # NumericField(fieldPrefix + "Close", as_name='Close'),
         NumericField(fieldPrefix + "Volume", as_name='Volume', sortable=True),
         # NumericField(fieldPrefix + "Score", as_name='Score'),
-        #TagField(fieldPrefix + "OpenInt", separator=";", as_name='OpenInt')
+        # TagField(fieldPrefix + "OpenInt", separator=";", as_name='OpenInt')
     )
 
     print("before try on Ticker")
@@ -194,8 +204,6 @@ def isInt(s):
         return True
     except ValueError:
         return False
-
-
 
 
 if __name__ == "__main__":

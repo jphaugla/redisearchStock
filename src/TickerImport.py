@@ -99,6 +99,7 @@ def process_file(file_name):
         not_recent_dates = conn.smembers('remove_current')
         process_recents = environ.get('PROCESS_RECENTS')
 
+
     with open(file_name) as csv_file:
         # file is tab delimited
         csv_reader = csv.DictReader(csv_file, delimiter=',', quoting=csv.QUOTE_NONE)
@@ -134,7 +135,7 @@ def process_file(file_name):
             if do_load:
                 ticker_loaded += 1
                 if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
-                    conn.json().set(nextTicker.get_key(), Path.rootPath(), nextTicker.__dict__)
+                    conn.json().set(nextTicker.get_key(), Path.root_path(), nextTicker.__dict__)
                 else:
                     conn.hset(nextTicker.get_key(), mapping=nextTicker.__dict__)
                 # this write is for debug to know what line failed on
