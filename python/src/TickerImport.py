@@ -7,6 +7,7 @@ import time
 import redis
 from redis.commands.json.path import Path
 import sys
+import re
 import datetime
 from os import environ
 import os.path
@@ -24,35 +25,23 @@ def main():
     print("Starting productimport.py at " + str(datetime.datetime.now()))
     startTime = time.time()
     startTimeChar = str(datetime.datetime.now())
-
-    if environ.get('TICKER_FILE_LOCATION') is not None:
-        ticker_file_location = (environ.get('TICKER_FILE_LOCATION'))
-        print("passed in ticker file location " + ticker_file_location)
-    else:
-        ticker_file_location = "../data/ticker"
-        print("no passed in index file location ")
-    if environ.get('PROCESSES') is not None:
-        numberProcesses = int(environ.get('PROCESSES'))
-        print("passed in PROCESSES " + str(numberProcesses))
-    else:
-        numberProcesses = 1
-        print("no passed in number of processes ")
-
-
+    ticker_file_location = environ.get('TICKER_FILE_LOCATION', "../data/ticker")
+    print("passed in ticker file location " + ticker_file_location)
+    number_processes = int(environ.get('PROCESSES', '1'))
+    print("passed in PROCESSES " + str(number_processes))
     print("process_files_parallel()" + str(startTime))
     for (dirpath, dirnames, filenames) in os.walk(ticker_file_location):
         # print("dirpath=" + dirpath)
         # print(dirnames)
         # print(filenames)
-        process_files_parallel(dirpath, filenames, numberProcesses)
+        process_files_parallel(dirpath, filenames, number_processes)
     # process_file("/data/daily/us/nysestocks/1/asix.us.txt")
-    endTime = time.time()
+    end_time = time.time()
     print("processing complete. start was " + startTimeChar + " end was " + str(datetime.datetime.now()) +
-           " total time " + str(int(endTime - startTime)) + " seconds")
+          " total time " + str(int(end_time - startTime)) + " seconds")
+
 
 def process_file(file_name):
-
-    redis_password = ""
     contains_txt = file_name.find("txt")
     process_dates = "false"
     process_recents = "false"
@@ -64,30 +53,15 @@ def process_file(file_name):
         print("skipping unkown file type " + file_name)
         return
 
-    if environ.get('REDIS_SERVER') is not None:
-        redis_server = environ.get('REDIS_SERVER')
-        # print("passed in redis server is " + redis_server)
-    else:
-        redis_server = 'localhost'
-        # print("no passed in redis server variable ")
-
-    if environ.get('REDIS_PORT') is not None:
-        redis_port = int(environ.get('REDIS_PORT'))
-        # print("passed in redis port is " + str(redis_port))
-    else:
-        redis_port = 6379
-        # print("no passed in redis port variable ")
-
-    if environ.get('REDIS_PASSWORD') is not None:
-        redis_password = environ.get('REDIS_PASSWORD')
-        print("passed in redis password is " + redis_password)
-
+    redis_server = environ.get('REDIS_SERVER', 'localhost')
+    redis_port = int(environ.get('REDIS_PORT', '6379'))
+    redis_password = environ.get('REDIS_PASSWORD', "")
 
     if redis_password is not None:
-        conn = redis.StrictRedis(redis_server, redis_port, password=redis_password,
-                                 decode_responses=True)
+        conn = redis.Redis(redis_server, redis_port, password=redis_password,
+                           decode_responses=True)
     else:
-        conn = redis.StrictRedis(redis_server, redis_port, decode_responses=True)
+        conn = redis.Redis(redis_server, redis_port, decode_responses=True)
 
     if environ.get('PROCESS_DATES') is not None:
         process_dates = (environ.get('PROCESS_DATES'))
@@ -99,7 +73,6 @@ def process_file(file_name):
         not_recent_dates = conn.smembers('remove_current')
         process_recents = environ.get('PROCESS_RECENTS')
 
-
     with open(file_name) as csv_file:
         # file is tab delimited
         csv_reader = csv.DictReader(csv_file, delimiter=',', quoting=csv.QUOTE_NONE)
@@ -108,6 +81,12 @@ def process_file(file_name):
         #  go through all rows in the file
         start_time = str(datetime.datetime.now())
         short_file_name = os.path.basename(file_name)
+        directory_name = os.path.dirname(file_name)
+        # print("directory name is " + directory_name)
+        market_identifier = directory_name.replace("/data/daily/", "")
+        # print(market_identifier)
+        final_market = re.sub('\d', "", market_identifier).replace('/', " ").upper()
+        # print("final market  ", final_market)
 
         for row in csv_reader:
             #  increment ticker_idx and use as incremental part of the key
@@ -115,6 +94,7 @@ def process_file(file_name):
             ticker_idx += 1
             nextTicker = Ticker(**row)
             do_load = True
+            nextTicker.Exchange = final_market
             # print(nextTicker)
             if process_dates == "true":
 
@@ -143,15 +123,12 @@ def process_file(file_name):
 
             if ticker_idx % 50000 == 0:
                 print(str(ticker_idx) + " rows from file " + short_file_name + " loaded to redis " + str(ticker_loaded))
-                print ("rows added from start " + start_time + " ended at " + str(datetime.datetime.now()))
+                print("rows added from start " + start_time + " ended at " + str(datetime.datetime.now()))
         csv_file.close()
         # print(str(ticker_idx) + " rows from file " + short_file_name + " loaded to redis " + str(ticker_loaded))
         # print("rows added from start " + start_time + " ended at " + str(datetime.datetime.now()))
         conn.hset("ticker_load", short_file_name, "start:" + start_time + ":finished:" + str(datetime.datetime.now())
                   + ":rows_in_file:" + str(ticker_idx) + ":rows_loaded:" + str(ticker_loaded))
-
-
-
 
 
 def process_files_parallel(dirname, names, numProcesses: int):

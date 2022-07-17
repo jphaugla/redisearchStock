@@ -2,7 +2,7 @@ class Ticker(object):
     TICKER_PREFIX = "ticker:"
 
     def __init__(self):
-        self.Market = ""
+        self.Geography = ""
         self.Ticker = ""
         self.Per = ""
         self.Date = 0
@@ -14,10 +14,11 @@ class Ticker(object):
         self.Volume = 0
         self.OpenInt = ""
         self.MostRecent = "false"
+        self.Exchange = ""
 
 
     def __init__(self, **kwargs):
-        self.Market = ""
+        self.Geography = ""
         self.Ticker = ""
         self.TickerShort = ""
         self.Per = ""
@@ -31,17 +32,18 @@ class Ticker(object):
         self.OpenInt = ""
         self.Score = 1.0
         self.MostRecent = "false"
+        self.Exchange = ""
         for key in kwargs:
             # print("key is " + str(key) + " value is " + kwargs[key])
             value_type = "string"
             if key == "<TICKER>":
                 objkey = "Ticker"
-                # also set the short ticker and the Market
+                # also set the short ticker and the Geography
                 split_ticker = kwargs[key].split('.')
                 short_ticker = split_ticker[0]
-                market = split_ticker[1]
+                geography = split_ticker[1]
                 setattr(self,"TickerShort", short_ticker.strip('\"'))
-                setattr(self, "Market", market.strip('\"'))
+                setattr(self, "Geography", geography.strip('\"'))
             elif key == "<PER>":
                 objkey = "Per"
             elif key == "<DATE>":

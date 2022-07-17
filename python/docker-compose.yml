@@ -2,9 +2,7 @@ version: '3'
 
 services:
   redis:
-    # image: redislabs/redismod:latest
     image: redis/redis-stack:latest
-    # image: myredis
     container_name: redis
     environment:
       # ALLOW_EMPTY_PASSWORD is recommended only for development.
@@ -43,6 +41,6 @@ services:
       - '5000:5000'
     volumes:
       - "./src/:/app"
-      - "./data/:/data"
+      - "../data/:/data"
     depends_on:
       - redis

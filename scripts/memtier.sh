@@ -1,0 +1,1 @@
+memtier_benchmark --ratio=1:4 --test-time=60 -d 150 -t 2 -c 2 --pipeline=30 --key-pattern=S:S --hide-histogram -x 10 -s  jasonhaug1.eastus.redisenterprise.cache.azure.net -p 10000 -a xb4qGQ0PkjhWAVuCs00gQc4q0jh9gbpuFZSuvZUwRJY=
