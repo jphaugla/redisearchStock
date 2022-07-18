@@ -17,7 +17,7 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install -r requirements.txt
 # We copy the rest of the codebase into the image if using k8s otherwise comment out
-# COPY src /app
+COPY src /app
 # Finally, we run uWSGI with the ini file we
 # created earlier
 CMD ["python","-u","appy.py"]]
