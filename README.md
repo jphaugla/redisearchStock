@@ -286,8 +286,6 @@ There is python running in the flask container (appy.py) listening for API calls
 cd scripts
 ./redoIndex.sh
 ```
-NOTE:  application is not currently working if JSON is used instead of Hashes.  The return type from json is different 
-than the return type for hashes and must be fixed for JSON to work properly.
 
 Go to the stock type [ahead page](http://localhost:5000) and find the desired stock
 

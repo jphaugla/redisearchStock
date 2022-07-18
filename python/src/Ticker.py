@@ -4,6 +4,7 @@ class Ticker(object):
     def __init__(self):
         self.Geography = ""
         self.Ticker = ""
+        self.TickerShort = ""
         self.Per = ""
         self.Date = 0
         self.Time = 0

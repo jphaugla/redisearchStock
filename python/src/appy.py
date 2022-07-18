@@ -96,14 +96,22 @@ def home(path):
             print(TickerReturn.docs[0], flush=True)
             print("TickerReturn docs 0 id")
             print(TickerReturn.docs[0].id, flush=True)
-            # print("TickerReturn docs 0 json", flush=True)
-            # print(TickerReturn.docs[0].json, flush=True)
+            print("TickerReturn docs 0 json", flush=True)
+            print(TickerReturn.docs[0].json, flush=True)
             # print("TickerReturn docs 0 json TickerShort", flush=True)
             # print(TickerReturn.docs[0].json.Market, flush=True)
             TickerResults = []
             for i in range(len(TickerReturn.docs) - 1):
-                # this does not work with json as the return structure is different
-                results = TickerReturn.docs[i]
+                if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
+                    print("in write json with ")
+                    doc_results = TickerReturn.docs[i]
+                    json_results = json.loads(doc_results.json)
+                    results = Ticker(id=doc_results.id, payload=doc_results.payload,
+                                     Ticker=json_results["Ticker"],
+                                     TickerShort=json_results["TickerShort"], Open=json_results["Open"],
+                                     Close=json_results["Close"], High=json_results["High"], Low=json_results["Low"])
+                else:
+                    results = TickerReturn.docs[i]
                 TickerResults.append(results)
                 print("results prints")
                 print(results, flush=True)
@@ -131,15 +139,28 @@ def home(path):
             # print(TickerReturn.docs[0])
             # print("TickerReturn docs 0 id")
             # print(TickerReturn.docs[0].id)
+            # print("TickerReturn.docs[0].json")
+            # print(TickerReturn.docs[0].json)
             # print("TickerReturn docs 0 TickerShort")
             # print(TickerReturn.docs[0].TickerShort)
             TickerResults = []
             for i in range(len(TickerReturn.docs) - 1):
-                results = TickerReturn.docs[i]
+                if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
+                    # since json version returns json instead of doc structure with hashes, must parse
+                    doc_results = TickerReturn.docs[i]
+                    json_results = json.loads(doc_results.json)
+                    results = Ticker(id=doc_results.id, payload=doc_results.payload, Date=doc_results.Date, Ticker=json_results["Ticker"],
+                                     TickerShort=json_results["TickerShort"], Open=json_results["Open"],
+                                     Close=json_results["Close"], High=json_results["High"], Low=json_results["Low"])
+                else:
+                    results = TickerReturn.docs[i]
                 TickerResults.append(results)
+                # print("results")
                 # print(results)
             # return_string = jsonify(TickerResults, 200)
+            # print("jsonpickle.encode")
             return_string = jsonpickle.encode(TickerResults)
+            # print(return_string)
         elif path == 'index':
             recreateIndex(db)
             return_string = "Done"
