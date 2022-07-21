@@ -34,6 +34,7 @@ services:
       - WRITE_JSON=true
       - OLDEST_VALUE=20220101
       - CURRENT_VALUE=20220414
+      - REDIS_INDEX=ticker
     build:
       context: .
       dockerfile: Dockerfile-flask
@@ -44,3 +45,14 @@ services:
       - "../data/:/data"
     depends_on:
       - redis
+
+  trino:
+    image: jruaux/trino-redisearch
+    hostname: trino
+    container_name: trino
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    environment:
+      REDISEARCH_URI: 'redis://redis:6379'

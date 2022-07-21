@@ -29,9 +29,9 @@ $('#input.typeahead').typeahead({
 		console.log(item);
 	},
 	ajax: {
-		url: "http://localhost:5000/search/?search_column=Ticker&sort_column=Volume&most_recent=true",
+		url: "http://localhost:5000/search/?search_column=ticker&sort_column=volume&most_recent=true",
 		timeout: 200,
-		displayField: "TickerShort",
+		displayField: "tickershort",
 		triggerLength: 2,
 		method: "get",
 		loadingClass: "input",
@@ -57,18 +57,18 @@ $('#input.typeahead').typeahead({
                 search_string="&ticker="+$("#input").val()
             }
             $.ajax({
-                url: "http://localhost:5000/oneticker/?sort_column=Date"+search_string
+                url: "http://localhost:5000/oneticker/?sort_column=date"+search_string
             }).then(function(data) {
                 $("#tickers").empty()
                 for (var ticker of data) {
                     card='<div class="card m-1 p-1" style="width: 18rem;">'
                     card=card+'<div class="card-header">'
-                      card=card+'<h3 class="card-title">'+(ticker.Date).substring(0,4)+"-"+(ticker.Date).substring(4,6)+"-"+(ticker.Date).substring(6)+'</h3>'
+                      card=card+'<h3 class="card-title">'+(ticker.date).substring(0,4)+"-"+(ticker.date).substring(4,6)+"-"+(ticker.date).substring(6)+'</h3>'
                     card=card+'</div>'
                     card=card+'<div class="card-footer">'
-                        card=card+'<p class="card-text align-bottom"><strong>open:</strong> $'+ticker.Open+' <strong>close:</strong> $'+ticker.Close+'</p>'
-                        card=card+'<p class="card-text align-bottom"><strong>high:</strong> $'+ticker.High+' <strong>low:</strong> $'+ticker.Low+'</p>'
-                        card=card+'<p class="card-text align-bottom"><strong>volume:</strong> '+numberWithCommas(ticker.Volume)+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>open:</strong> $'+ticker.open+' <strong>close:</strong> $'+ticker.close+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>high:</strong> $'+ticker.high+' <strong>low:</strong> $'+ticker.low+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>volume:</strong> '+numberWithCommas(ticker.volume)+'</p>'
                     card=card+'</div>'
                     card=card+'</div>'
 

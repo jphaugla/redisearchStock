@@ -16,7 +16,7 @@ spec:
     spec:  
       containers:
       - name:  redis-searchstock  # Container name 
-        image: jphaugla/redis-searchstock:latest #repo/image:tag
+        image: jphaugla/redis-searchstock:latest 
         imagePullPolicy: Always 
         ports:  
          - containerPort: 8080

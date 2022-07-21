@@ -91,23 +91,22 @@ def process_file(file_name):
             ticker_idx += 1
             nextTicker = Ticker(**row)
             do_load = True
-            nextTicker.Exchange = final_market
+            nextTicker.exchange = final_market
             # print(nextTicker)
-            if int(nextTicker.Date) >= current_load_date:
-                nextTicker.MostRecent = 'true'
-                # print("set mostrecent true")
+            if int(nextTicker.date) >= current_load_date:
+                nextTicker.mostrecent = 'true'
+                print("set mostrecent true")
             else:
-                nextTicker.MostRecent = 'false'
-                if int(nextTicker.Date) < min_load_date:
+                nextTicker.mostrecent = 'false'
+                if int(nextTicker.date) < min_load_date:
                     do_load = False
                     # print("do_load should be false and not loading ticker date " + nextTicker.Date + " with min load date " + str(min_load_date))
 
             # clear any recent days
             if process_recents == "true":
                 for date in not_recent_dates:
-                    if conn.exists(nextTicker.TICKER_PREFIX + nextTicker.Ticker + ':' + str(date)):
-                        # print("writing MostRecent False " + nextTicker.TICKER_PREFIX + nextTicker.Ticker + ':' + str(date))
-                        conn.hset(nextTicker.TICKER_PREFIX + nextTicker.Ticker + ':' + str(date), 'MostRecent', 'false')
+                    if conn.exists(nextTicker.TICKER_PREFIX + nextTicker.ticker + ':' + str(date)):
+                        conn.hset(nextTicker.TICKER_PREFIX + nextTicker.ticker + ':' + str(date), 'mostrecent', 'false')
             if do_load:
                 ticker_loaded += 1
                 if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":

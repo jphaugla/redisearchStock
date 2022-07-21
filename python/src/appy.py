@@ -19,6 +19,7 @@ bootstrap = Bootstrap()
 
 redis_server = environ.get('REDIS_SERVER', 'localhost')
 redis_port = int(environ.get('REDIS_PORT', '6379'))
+redis_index = environ.get('REDIS_INDEX', 'ticker')
 
 print("beginning of appy.py now")
 
@@ -71,12 +72,12 @@ def home(path):
             TickerSearch = "@" + str(search_column) + ":" + str(search_str) + "*"
             most_recent = request.args.get("most_recent")
             if most_recent is not None and most_recent == "true":
-                TickerSearch = TickerSearch + " @MostRecent:{ true }"
+                TickerSearch = TickerSearch + " @mostrecent:{ true }"
             q1 = Query(TickerSearch)
             if sort_by is not None:
                 q1.sort_by(sort_by, asc=False)
             print("TickerSearch is " + TickerSearch, flush=True)
-            TickerReturn = db.ft(index_name="Ticker").search(q1)
+            TickerReturn = db.ft(index_name=redis_index).search(q1)
             print("total number returned is " + str(TickerReturn.total), flush=True)
             print("page number " + str(len(TickerReturn.docs)))
             # print("TickerReturn")
@@ -88,18 +89,18 @@ def home(path):
             # print(TickerReturn.docs[0].id, flush=True)
             # print("TickerReturn docs 0 json", flush=True)
             # print(TickerReturn.docs[0].json, flush=True)
-            # print("TickerReturn docs 0 json TickerShort", flush=True)
-            # print(TickerReturn.docs[0].json.Market, flush=True)
+            # print("TickerReturn docs 0 json tickershort", flush=True)
             TickerResults = []
-            for i in range(len(TickerReturn.docs) - 1):
+            print("length of return " + str(len(TickerReturn.docs)))
+            for i in range(len(TickerReturn.docs)):
                 if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
                     print("in write json with ")
                     doc_results = TickerReturn.docs[i]
                     json_results = json.loads(doc_results.json)
                     results = Ticker(id=doc_results.id, payload=doc_results.payload,
-                                     Ticker=json_results["Ticker"],
-                                     TickerShort=json_results["TickerShort"], Open=json_results["Open"],
-                                     Close=json_results["Close"], High=json_results["High"], Low=json_results["Low"])
+                                     ticker=json_results["ticker"],
+                                     tickershort=json_results["tickershort"], open=json_results["open"],
+                                     close=json_results["close"], high=json_results["high"], low=json_results["low"])
                 else:
                     results = TickerReturn.docs[i]
                 TickerResults.append(results)
@@ -117,12 +118,12 @@ def home(path):
             get_ticker = request.args.get("ticker")
             print("reporting ticket is ", get_ticker)
             sort_by = request.args.get("sort_column")
-            TickerSearch = "@Ticker:" + get_ticker
+            TickerSearch = "@ticker:" + get_ticker
             q1 = Query(TickerSearch).paging(0, 200)
             if sort_by is not None:
                 q1.sort_by(sort_by, asc=False)
             print("TickerSearch is " + TickerSearch)
-            TickerReturn = db.ft(index_name="Ticker").search(q1)
+            TickerReturn = db.ft(index_name=redis_index).search(q1)
             print("number returned is " + str(TickerReturn.total))
             print("page number " + str(len(TickerReturn.docs)))
             # print("TickerReturn")
@@ -133,17 +134,17 @@ def home(path):
             # print(TickerReturn.docs[0].id)
             # print("TickerReturn.docs[0].json")
             # print(TickerReturn.docs[0].json)
-            # print("TickerReturn docs 0 TickerShort")
-            # print(TickerReturn.docs[0].TickerShort)
+            # print("TickerReturn docs 0 tickershort")
+            # print(TickerReturn.docs[0].tickershort)
             TickerResults = []
             for i in range(len(TickerReturn.docs) - 1):
                 if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
                     # since json version returns json instead of doc structure with hashes, must parse
                     doc_results = TickerReturn.docs[i]
                     json_results = json.loads(doc_results.json)
-                    results = Ticker(id=doc_results.id, payload=doc_results.payload, Date=doc_results.Date, Ticker=json_results["Ticker"],
-                                     TickerShort=json_results["TickerShort"], Open=json_results["Open"],
-                                     Close=json_results["Close"], High=json_results["High"], Low=json_results["Low"])
+                    results = Ticker(id=doc_results.id, payload=doc_results.payload, date=doc_results.date, ticker=json_results["ticker"],
+                                     tickershort=json_results["tickershort"], open=json_results["open"],
+                                     close=json_results["close"], high=json_results["high"], low=json_results["low"])
                 else:
                     results = TickerReturn.docs[i]
 
@@ -190,26 +191,26 @@ def recreateIndex(db):
     # TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score', filter="@MostRecent=='true'")
     TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType)
     TickerSCHEMA = (
-        TextField(fieldPrefix + "Ticker", as_name='Ticker', no_stem=True),
-        TextField(fieldPrefix + "TickerShort", as_name='TickerShort', no_stem=True),
+        TextField(fieldPrefix + "ticker", as_name='ticker', no_stem=True),
+        TextField(fieldPrefix + "tickershort", as_name='tickershort', no_stem=True),
         # TagField(fieldPrefix + "Per", separator=";", as_name='Per'),
-        TagField(fieldPrefix + "MostRecent", as_name='MostRecent'),
-        NumericField(fieldPrefix + "Date", as_name='Date', sortable=True),
-        # NumericField(fieldPrefix + "Open", as_name='Open'),
-        # NumericField(fieldPrefix + "High", as_name='High'),
-        # NumericField(fieldPrefix + "Low", as_name='Low'),
-        # NumericField(fieldPrefix + "Close", as_name='Close'),
-        NumericField(fieldPrefix + "Volume", as_name='Volume', sortable=True),
-        # NumericField(fieldPrefix + "Score", as_name='Score'),
-        # TagField(fieldPrefix + "OpenInt", separator=";", as_name='OpenInt')
+        TagField(fieldPrefix + "mostrecent", as_name='mostrecent'),
+        NumericField(fieldPrefix + "date", as_name='date', sortable=True),
+        # NumericField(fieldPrefix + "open", as_name='open'),
+        # NumericField(fieldPrefix + "high", as_name='high'),
+        # NumericField(fieldPrefix + "low", as_name='low'),
+        # NumericField(fieldPrefix + "close", as_name='close'),
+        NumericField(fieldPrefix + "volume", as_name='volume', sortable=True),
+        # NumericField(fieldPrefix + "score", as_name='score'),
+        # TagField(fieldPrefix + "openint", separator=";", as_name='openint')
     )
 
     print("before try on Ticker")
     try:
-        db.ft(index_name="Ticker").create_index(TickerSCHEMA, definition=TickerDefinition)
+        db.ft(index_name=redis_index).create_index(TickerSCHEMA, definition=TickerDefinition)
     except redis.ResponseError:
-        db.ft(index_name="Ticker").dropindex(delete_documents=False)
-        db.ft(index_name="Ticker").create_index(TickerSCHEMA, definition=TickerDefinition)
+        db.ft(index_name=redis_index).dropindex(delete_documents=False)
+        db.ft(index_name=redis_index).create_index(TickerSCHEMA, definition=TickerDefinition)
 
 
 def isInt(s):
