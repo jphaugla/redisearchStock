@@ -87,8 +87,10 @@ environment variable at scripts/app.env.
   * running on kubernetes (example uses GKE)
 
 ### Docker Compose 
-Build just needs to be done initially.  NOTE:  if building a new image for k8s, remove a comment to include the copy of the src directory into the image.
+Build just needs to be done initially.  NOTE:  if building a new image for k8s, ensure the Dockerfile is doing a copy of the src directory
+into the image and not relying on docker-compose mount of the src directory 
 ```bash
+cd python
 docker-compose build
 docker-compose up -d 
 ```
@@ -124,9 +126,6 @@ hgetall ticker_load
  ```bash
 docker exec -it flask bash -c "python appy.py"
  ```
-
-
-
 
 ### Deploy Python
 
@@ -186,6 +185,7 @@ kubectl get pods
 kubectl port-forward service/rec-ui 8443
 ```
 * [https://localhost:8443](https://localhost:8443)
+
 ##### Create redis database
 ```bash
 kubectl apply -f redis-enterprise-database.yml
@@ -243,7 +243,7 @@ kubectl port-forward deployment/redisinsight 8001
 | Password | DrCh7J31 (from ./getDatabasepw.sh above) |
 * click ok
 
-#### Deploy redis-searchstock on Kubernetes
+#### Deploy redis-searchStock on Kubernetes
 
 * must [log into docker](https://docs.docker.com/engine/reference/commandline/login/) to have access to the docker image
 ```bash
@@ -253,20 +253,52 @@ docker login
   * can find the IP addresses and ports for each of the databases by running ```kubectl get services```
   * In the example below the IP address for the REDIS_HOST in the configmap.yaml is *10.28.16.188*
 ![services](src/static/k8sgetservices.png)
-  * get the database password by running ```getDatabasePw```.  Put the returned password the configmap REDIS_PASSWORD 
+  * get the database password and port by running ```getDatabasePw```.  Put the returned password the configmap REDIS_PASSWORD and REDIS_PORT
 * apply the configuration map
 ```bash
 cd k8s
+# change REDIS_PASSWORD and REDIS_PORT based on ./getDatabasePw
+vi configmap.yaml
 kubectl apply -f configmap.yaml
 ```
 * deploy the redis-searchstock
 ```bash
-kubectl apply -f stock.yml
+kubectl apply -f pvc.yaml
+kubectl apply -f stock.yaml
+kubectl get pods
 ```
 * port forward and continue with testing of the APIs
   * NOTE:  get exact name use ```kubectl get pods```
 ```bash
-kubectl port-forward redis-searchstock-c568d9b6b-z2mnf 5000
+kubectl port-forward redis-searchstock-c568d9b6b-5t8v6 5000
+```
+#### Run search stock
+* get the data files from [stooq](https://github.com/jphaugla/redisearchStock#download-the-datafiles)
+* copy the stooq files into place.  Easiest to zip them before copying using ```tar -cvf all_tar.tgz data/daily```
+```bash
+kubectl cp all_tar.tgz redis-searchstock-c568d9b6b-5t8v6
+```
+* set the load parameters using redisinsight CLI
+```bash
+hset process_control oldest_value 20220101 current_value 20220414 
+```
+* log into the python stock flask application  and kick off the load
+  * can adjust the location of data files using environment variable TICKER_FILE_LOCATION
+```bash
+kubectl exec -it redis-searchstock-c568d9b6b-5t8v6 -- bash
+python TickerImport.py
+```
+
+##### Publish docker image
+The docker image used in k8s/stock.yaml is jphaugla/redis-searchstock:latest
+If building own image, have docker login, change to personal docker account and change the stock.yaml
+To build different version of the docker image:  docker-compose build, docker tag, docker publish 
+```bash
+cd python
+docker login
+docker-compose build
+docker image tag redis-searchstock:latest jphaugla/redis-searchstack:latest
+docker image push jphaugla/redis-searchstack:latest
 ```
 
 #### Memtier benchmark

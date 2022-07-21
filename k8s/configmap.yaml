@@ -7,12 +7,12 @@ metadata:
     tier: redis
 data:
   CORE_POOLSIZE: "20"
-  REDIS_PASSWORD: S5mzKwbn
-  REDIS_PORT: "11536"
-  TICKER_FILE_LOCATION: "/data/daily/us/nasdaq"
+  REDIS_PASSWORD: JMWJD5NH
+  REDIS_PORT: "11635"
+  TICKER_FILE_LOCATION: "/data/daily/us/nyse etfs"
   PROCESSES: "6"
   PYTHONBUFFERED: "0"
   WRITE_JSON: "false"
   PROCESS_DATES: "true"
   PROCESS_RECENTS: "false"
-  REDIS_SERVER: "10.28.16.188"
+  REDIS_SERVER: redis-enterprise-database.demo

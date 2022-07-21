@@ -5,11 +5,13 @@ metadata:
 spec:
   memorySize: 2GB
   persistence: "snapshotEvery1Hour"
-  # replication: true
+  replication: false
   rolesPermissions:
   - type: redis-enterprise
     role: "DB Member"
     acl: "Not Dangerous"
   modulesList: 
   - name: search
-    version: 2.4.6
+    version: 2.4.8
+  - name: ReJSON
+    version: 2.0.8

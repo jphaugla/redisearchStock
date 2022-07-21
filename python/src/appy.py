@@ -16,19 +16,9 @@ import jsonpickle
 app = Flask(__name__)
 app.debug = True
 bootstrap = Bootstrap()
-if environ.get('REDIS_SERVER') is not None:
-    redis_server = environ.get('REDIS_SERVER')
-    print("passed in redis server is " + redis_server)
-else:
-    redis_server = 'localhost'
-    print("no passed in redis server variable ")
 
-if environ.get('REDIS_PORT') is not None:
-    redis_port = int(environ.get('REDIS_PORT'))
-    print("passed in redis port is " + str(redis_port))
-else:
-    redis_port = 6379
-    print("no passed in redis port variable ")
+redis_server = environ.get('REDIS_SERVER', 'localhost')
+redis_port = int(environ.get('REDIS_PORT', '6379'))
 
 print("beginning of appy.py now")
 
@@ -41,7 +31,7 @@ def home(path):
     print("the request method is " + request.method + " path is " + path)
     if environ.get('REDIS_PASSWORD') is not None:
         redis_password = environ.get('REDIS_PASSWORD')
-        print("passed in redis password is " + redis_password)
+        # print("passed in redis password is " + redis_password)
 
     if redis_password is not None:
         db = redis.StrictRedis(redis_server, redis_port, password=redis_password,
@@ -94,10 +84,10 @@ def home(path):
             # print("TickerReturn docs 0")
             print("docs array 0 ", flush=True)
             print(TickerReturn.docs[0], flush=True)
-            print("TickerReturn docs 0 id")
-            print(TickerReturn.docs[0].id, flush=True)
-            print("TickerReturn docs 0 json", flush=True)
-            print(TickerReturn.docs[0].json, flush=True)
+            # print("TickerReturn docs 0 id")
+            # print(TickerReturn.docs[0].id, flush=True)
+            # print("TickerReturn docs 0 json", flush=True)
+            # print(TickerReturn.docs[0].json, flush=True)
             # print("TickerReturn docs 0 json TickerShort", flush=True)
             # print(TickerReturn.docs[0].json.Market, flush=True)
             TickerResults = []
@@ -120,7 +110,9 @@ def home(path):
             # return_string = TickerResults
             print("final return string", flush=True)
             print(return_string, flush=True)
+
         # category passed in will be Category name, return Category attributes
+
         elif path == 'oneticker/':
             get_ticker = request.args.get("ticker")
             print("reporting ticket is ", get_ticker)
@@ -154,6 +146,7 @@ def home(path):
                                      Close=json_results["Close"], High=json_results["High"], Low=json_results["Low"])
                 else:
                     results = TickerReturn.docs[i]
+
                 TickerResults.append(results)
                 # print("results")
                 # print(results)
