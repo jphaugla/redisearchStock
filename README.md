@@ -297,8 +297,8 @@ To build different version of the docker image:  docker-compose build, docker ta
 cd python
 docker login
 docker-compose build
-docker image tag redis-searchstock:latest jphaugla/redis-searchstack:latest
-docker image push jphaugla/redis-searchstack:latest
+docker image tag redis-searchstock:latest jphaugla/redis-searchstock:latest
+docker image push jphaugla/redis-searchstock:latest
 ```
 
 #### Memtier benchmark
