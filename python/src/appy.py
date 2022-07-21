@@ -34,10 +34,10 @@ def home(path):
         # print("passed in redis password is " + redis_password)
 
     if redis_password is not None:
-        db = redis.StrictRedis(redis_server, redis_port, password=redis_password,
+        db = redis.Redis(redis_server, redis_port, password=redis_password,
                                decode_responses=True)
     else:
-        db = redis.StrictRedis(redis_server, redis_port, decode_responses=True)
+        db = redis.Redis(redis_server, redis_port, decode_responses=True)
 
     if request.method == 'PUT':
         # if prod_idx is set it is a replace

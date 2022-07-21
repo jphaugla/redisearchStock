@@ -63,17 +63,14 @@ def process_file(file_name):
     else:
         conn = redis.Redis(redis_server, redis_port, decode_responses=True)
 
-    if environ.get('PROCESS_DATES') is not None:
-        process_dates = (environ.get('PROCESS_DATES'))
-        # print("passed in PROCESS_DATES " + process_dates)
-        min_load_date = int(conn.hget("process_control", "oldest_value"))
-        current_load_date = int(conn.hget("process_control", "current_value"))
+    min_load_date = int(environ.get('OLDEST_VALUE'))
+    current_load_date = int(environ.get('CURRENT_VALUE'))
 
     if environ.get('PROCESS_RECENTS') is not None:
         not_recent_dates = conn.smembers('remove_current')
         process_recents = environ.get('PROCESS_RECENTS')
 
-    with open(file_name) as csv_file:
+    with open(file_name, mode="r", encoding='utf-8') as csv_file:
         # file is tab delimited
         csv_reader = csv.DictReader(csv_file, delimiter=',', quoting=csv.QUOTE_NONE)
         ticker_idx = 0
@@ -96,15 +93,14 @@ def process_file(file_name):
             do_load = True
             nextTicker.Exchange = final_market
             # print(nextTicker)
-            if process_dates == "true":
-
-                if int(nextTicker.Date) >= current_load_date:
-                    nextTicker.MostRecent = 'true'
-                else:
-                    nextTicker.MostRecent = 'false'
-                    if int(nextTicker.Date) < min_load_date:
-                        do_load = False
-                        # print("do_load should be false and not loading ticker date " + nextTicker.Date + " with min load date " + str(min_load_date))
+            if int(nextTicker.Date) >= current_load_date:
+                nextTicker.MostRecent = 'true'
+                # print("set mostrecent true")
+            else:
+                nextTicker.MostRecent = 'false'
+                if int(nextTicker.Date) < min_load_date:
+                    do_load = False
+                    # print("do_load should be false and not loading ticker date " + nextTicker.Date + " with min load date " + str(min_load_date))
 
             # clear any recent days
             if process_recents == "true":
@@ -135,7 +131,8 @@ def process_files_parallel(dirname, names, numProcesses: int):
     # Process each file in parallel via Poll.map()
     print("starting process_files_parallel")
     pool = Pool(processes=numProcesses)
-    results = pool.map(process_file, [os.path.join(dirname, name) for name in names if (name.find("txt") > -1)])
+    results = pool.map(process_file, [os.path.join(dirname, name)
+                                      for name in names if (name.find("txt") > -1 and not name.startswith('.'))])
 
 
 def process_files(dirname, names):

@@ -25,7 +25,8 @@ A stock ticker solution typeahead solution based on downloaded stock files.  Use
     - [Add Memtier Benchmark](#memtier-benchmark)
   - [Use the Application](#use-the-application)
     - [Create Index](#create-index)
-- [Cleaning up](#cleaning-up)
+- [Troubleshooting](#troubleshooting)
+
 
 ## Overview
 
@@ -324,4 +325,10 @@ Go to the stock type [ahead page](http://localhost:5000) and find the desired st
 These are a group of sample redis-cli queries to see 
 ```bash
 redic-cli -f scripts/searchQueries.txt
+```
+### Troubleshooting
+Moving the Stooq datafiles from apple (BSD) to Linux can cause an odd read errors in the loading file program
+delete all these erroneous files.  I have now added some code to ignore hidden files in python version of code.
+```bash
+find data/daily -type f -iname "._*.*" -ls -delete
 ```
