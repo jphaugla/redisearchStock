@@ -97,12 +97,6 @@ docker-compose up -d
 ```
 
 #### Prepare the load
-* If PROCESS_DATES is set, these entries should be made (customize as needed)
-  * This will load all the values for 2022 and set the current data to 20220315
-  * In k8s, will do next steps using included redisinsight image on port 8001
-```bash
-docker exec -it redis redis-cli 
-hset process_control oldest_value 20220101 current_value 20220414 
 ```
 * If PROCESS_RECENTS is set, set list of recent dates to specifically set the MostRecent flag to false
   * This is needed when loading the next set of values.  E.g.  Current data is 20220315 and want to ensure three previous dates are false for MostRecent.  
