@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trino-config
+  labels:
+    app: redis-trino
+    tier: redis
+data:
+  REDISEARCH_URI: "redis://:JMWJD5NH@redis-enterprise-database.demo:11635"

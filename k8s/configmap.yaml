@@ -16,4 +16,5 @@ data:
   OLDEST_VALUE: "20220101"
   CURRENT_VALUE: "20220414"
   PROCESS_RECENTS: "false"
+  REDIS_INDEX: "ticker"
   REDIS_SERVER: redis-enterprise-database.demo

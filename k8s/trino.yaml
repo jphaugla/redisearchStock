@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-trino # deployment name
+  labels:
+    app: redis-trino # deployment label
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-trino # which pods is the deployment managing, as defined by the pod template
+  template: # pod template
+    metadata:
+      labels:
+        app: redis-trino 
+    spec:  
+      containers:
+      - name:  redis-trino  # Container name 
+        image: jruaux/trino-redisearch
+        imagePullPolicy: Always 
+        ports:  
+         - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: trino-config
+        resources:
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+            requests:
+              cpu: "1000m"
+              memory: "1024Mi"
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-trino-service       # name should not be 'redis-lb' 
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    app: redis-trino
+---

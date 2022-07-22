@@ -1,7 +1,7 @@
 # redisearchStock
 A stock ticker solution typeahead solution based on downloaded stock files.  Uses Python redisearch for an API and jquery with bootstrap ajax typeahead plugin.
  
-![app screen](src/static/typeaheadStocks.png)
+![app screen](python/src/static/typeaheadStocks.png)
 
 ## Outline
 
@@ -11,8 +11,9 @@ A stock ticker solution typeahead solution based on downloaded stock files.  Use
 - [Instructions](#instructions)
   - [Create Environment](#create-environment)
   - [Download the datafiles](#download-the-datafiles)
+  - [Set Environment Variables](#set-environment-variables)
   - [Multiple Deployment options](#multiple-options-for-creating-the-environment)
-  - [Docker Compose](#docker-compose-startup)
+  - [Docker Compose](#docker-compose)
     - [Prepare the Load](#prepare-the-load)
     - [Start Ticker Load](#start-ticker-load)
   - [Deploy Python on Linux](#deploy-python)
@@ -61,7 +62,7 @@ get clone https://github.com/jphaugla/redisearchStock.git
   * There is a separate file for each *stock* or *currency* with a long history of data.  See instructions below for setting the environment variables to limit history load
   * To simplify things, best to remove the spaces in the file directory such as "nasdaq stocks".  The spaces are dealt with in docker-compose but never cleaned this up in k8s.  Just easier to eliminate the spaces.
   
-#### Set environment variables
+### Set environment variables
 
 The docker compose file has the environment variables set for the redis connection and the location of the data files.  In k8s, the environment is set in the configmap.
 This code uses redisearch.  The redis database must have redisearch installed.  In docker, the redis stack image contains all the modules.   In k8s, redisearch is added in the database yaml file. 
@@ -70,15 +71,16 @@ the US tickers with all of the history can be a lot of data on a laptop.  Here i
 Modify these values in docker-compose.yml or in the configmap for k8s.  If outside of a container, there is a file created with 
 environment variable at scripts/app.env.
 
-| variable             | Original Value | Desccription                                                                                                                                                            |
-|----------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| REDIS_HOST           | redis          | The name of the redis docker container                                                                                                                                  |
-| REDIS_PORT           | 6379           | redis port                                                                                                                                                              |
-| TICKER_FILE_LOCATION | /data          | leave in /data but can use sub-directory to minimize load size                                                                                                          | 
-| PROCESSES            | 6              | On larger machines, increases this will increase load speed                                                                                                             |
-| WRITE_JSON           | false          | flag to use JSON instead of Hash structures                                                                                                                    |
-| PROCESS_DATES        | true           | have date-based logic instead of just a simple initial load.  Allows for <br/> skipping any records old than a particular date (requires creation of specific redis hash) |   
-| PROCESS_RECENTS      | false          | will set most recent flag for specified keys back to false    (requires creation of specific redis set)                                                             |
+| variable             | Original Value  | Desccription                                                                                         |
+|----------------------|-----------------|------------------------------------------------------------------------------------------------------|
+| REDIS_HOST           | redis           | The name of the redis docker container                                                               |
+| REDIS_PORT           | 6379            | redis port                                                                                           |
+| TICKER_FILE_LOCATION | /data           | leave in /data but can use sub-directory to minimize load size                                       | 
+| PROCESSES            | 6               | On larger machines, increases this will increase load speed                                          |
+| WRITE_JSON           | false           | flag to use JSON instead of Hash structures                                                          |
+| OLDEST_VALUE         | 20220101        | Skip any records older than this date                                                                |   
+| CURRENT_VALUE        | 20220414        |  Use this as current value.  This also sets mostrecent flag                                          |
+| PROCESS_RECENTS      | false           | will set most recent flag for specified keys back to false (requires creation of specific redis set) |
 
 
 ### Multiple options for creating the environment:  
@@ -247,7 +249,7 @@ docker login
 * modify, create the environmental variables by editing configmap.yml
   * can find the IP addresses and ports for each of the databases by running ```kubectl get services```
   * In the example below the IP address for the REDIS_HOST in the configmap.yaml is *10.28.16.188*
-![services](src/static/k8sgetservices.png)
+![services](python/src/static/k8sgetservices.png)
   * get the database password and port by running ```getDatabasePw```.  Put the returned password the configmap REDIS_PASSWORD and REDIS_PORT
 * apply the configuration map
 ```bash
@@ -270,12 +272,9 @@ kubectl port-forward redis-searchstock-c568d9b6b-5t8v6 5000
 #### Run search stock
 * get the data files from [stooq](https://github.com/jphaugla/redisearchStock#download-the-datafiles)
 * copy the stooq files into place.  Easiest to zip them before copying using ```tar -cvf all_tar.tgz data/daily```
+  * can be issue with hidden files caused by running tar on Mac and deploying on linux see [troubleshooting](#troubleshooting)
 ```bash
-kubectl cp all_tar.tgz redis-searchstock-c568d9b6b-5t8v6
-```
-* set the load parameters using redisinsight CLI
-```bash
-hset process_control oldest_value 20220101 current_value 20220414 
+kubectl cp all_tar.tgz redis-searchstock-c568d9b6b-5t8v6:/data
 ```
 * log into the python stock flask application  and kick off the load
   * can adjust the location of data files using environment variable TICKER_FILE_LOCATION
@@ -302,6 +301,15 @@ Before adding memtier.yml, must have extra node and then label the node
 ```bash
 kubectl label nodes gke-jph-k8s-cluster-default-pool-6ecc6b17-zllk app=memtier
 kubectl apply -f memtier.yml
+```
+#### Deploy redis-sql
+Can deploy redis-sql to run SQL on top of redisearch
+* Edit the URI string for connection to redisenterprise using ```./getDatabasePw.sh```
+* deploy configmap and yaml for trino
+```bash
+cd k8s
+kubectl apply -f trino-configmap.yaml
+kubectl apply -f trino.yaml
 ```
 
 Use redisinsights or the management UI to observe the benchmark results
