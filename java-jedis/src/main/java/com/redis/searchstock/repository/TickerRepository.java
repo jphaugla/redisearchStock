@@ -3,7 +3,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.searchstock.domain.Ticker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;
@@ -25,11 +24,11 @@ public class TickerRepository {
         // log.info("in uploadCSVFile");
         String[] parts = ticker.getTicker().split(Pattern.quote("."));
         // log.info("after split with parts " + parts[0]);
-        String tickerShort = parts[0];
+        String tickershort = parts[0];
         String geography = parts[1];
-        // String tickerShort = "AAA";
-        // log.info("after createTickerShort " + tickerShort);
-        ticker.setTickerShort(tickerShort);
+        // String tickershort = "AAA";
+        // log.info("after createtickershort " + tickershort);
+        ticker.setTickershort(tickershort);
         ticker.setGeography(geography);
         // some test code to eliminate nulls
         // ticker.setGeography("US");

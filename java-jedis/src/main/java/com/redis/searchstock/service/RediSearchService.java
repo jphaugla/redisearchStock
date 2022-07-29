@@ -6,7 +6,6 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import com.redis.searchstock.domain.Ticker;
 import jakarta.annotation.PostConstruct;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.web.multipart.MultipartFile;
 import redis.clients.jedis.*;
 
 import redis.clients.jedis.search.*;
@@ -16,6 +15,10 @@ import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.Reducers;
 import redis.clients.jedis.search.aggr.SortedField;
 
+import redis.clients.jedis.search.IndexDefinition;
+import redis.clients.jedis.search.IndexOptions;
+import redis.clients.jedis.search.Schema;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -24,7 +27,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,11 +44,16 @@ public class RediSearchService {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    IndexDefinition.Type indexType = IndexDefinition.Type.HASH;
+    String fieldPrefix = "";
     JedisPooled client;
     private static final String Prefix="ticker:";
 
     String indexName = "idx:movie"; // default name
-    String redisUrl = "redis://localhost:6379"; // default name
+    String redisHost = "localhost"; // default name
+    int redisPort = 6379;
+    String redisPassword = "jasonrocks";
+
     ObjectMapper mapper = new ObjectMapper();
     int min_load_date;
     int current_load_date;
@@ -57,11 +64,12 @@ public class RediSearchService {
 
         // Get the configuration from the application properties/environment
         indexName = env.getProperty("redis.index","Ticker");
-        redisUrl = env.getProperty("redis.url","redis://localhost:6379");
+        redisHost = env.getProperty("redis.host","localhost");
+        redisPort = Integer.parseInt(env.getProperty("redis.port", "6379"));
 
-        log.info("Configuration Index: " + indexName + " - redisUrl: " + redisUrl);
+        log.info("Configuration Index: " + indexName + " Host: " + redisHost + " Port " + String.valueOf(redisPort));
 
-        client = new JedisPooled(new URI(redisUrl));
+        client = new JedisPooled(redisHost, redisPort);
 
     }
 
@@ -80,7 +88,7 @@ public class RediSearchService {
         // no need to have "predefine mapping"
         Map<String, Object> returnValue = new HashMap<>();
         Map<String, Object> resultMeta = new HashMap<>();
-
+        log.info("starting search with querystring" + queryString);
         // Create a simple query
         Query query = new Query(queryString)
                 .setWithScores()
@@ -180,8 +188,8 @@ public class RediSearchService {
             log.info("Please select a CSV file to upload.");
         } else {
             // stringRedisTemplate.opsForValue().set("startLoadStockFiles", "now");
-            String min_date = (String) stringRedisTemplate.opsForHash().get("process_control", "oldest_value");
-            String current_date = (String) stringRedisTemplate.opsForHash().get("process_control", "current_value");
+            String min_date = env.getProperty("oldest_value");
+            String current_date =  env.getProperty("current_value");
             log.info("min date is " + min_date + " current date is " + current_date);
             min_load_date = Integer.parseInt(min_date);
             current_load_date = Integer.parseInt(current_date);
@@ -221,9 +229,9 @@ public class RediSearchService {
                 ticker.setExchange(final_exchange);
                 if(ticker.getDate() >= min_load_date) {
                     if(ticker.getDate() >= current_load_date){
-                        ticker.setMostRecent("true");
+                        ticker.setMostrecent("true");
                     } else {
-                        ticker.setMostRecent("false");
+                        ticker.setMostrecent("false");
                     }
                     String returnVal = tickerRepository.create(ticker);
                     // stringRedisTemplate.opsForValue().set("afterCreateTicker", "now");
@@ -237,4 +245,34 @@ public class RediSearchService {
     }
 
 
+    public void createIndex() {
+        if (env.getProperty("write_json","false") == "true") {
+            indexType = IndexDefinition.Type.JSON;
+            fieldPrefix = "$.";
+        } else {
+            indexType = IndexDefinition.Type.HASH;
+            fieldPrefix = "";
+        }
+        IndexDefinition indexRule = new IndexDefinition(indexType).setPrefixes(new String[]{"ticker:"});
+          /* can't alias column names using this
+                Schema schema = new Schema().addTextField(fieldPrefix + "ticker", 1.0)
+                .addTextField(fieldPrefix + "tickershort", 1.0)
+                .addTagField(fieldPrefix + "mostrecent")
+                .addSortableNumericField(fieldPrefix + "date")
+                .addSortableNumericField(fieldPrefix + "volume");
+          */
+        Schema schema = new Schema()
+                .addField( new Schema.TextField(FieldName.of(fieldPrefix + "ticker").as("ticker")))
+                .addField(new Schema.TextField(FieldName.of(fieldPrefix + "tickershort").as("tickershort")))
+                .addField(new Schema.Field(FieldName.of(fieldPrefix + "mostrecent").as("mostrecent"), Schema.FieldType.TAG))
+                .addField( new Schema.Field(FieldName.of(fieldPrefix + "date").as("date"), Schema.FieldType.NUMERIC))
+                .addField( new Schema.Field(FieldName.of(fieldPrefix + "volume").as("volume"), Schema.FieldType.NUMERIC));
+        try {
+            client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
+        } catch (Exception e) {
+            client.ftDropIndex("Ticker");
+            client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
+        }
+
+    }
 }

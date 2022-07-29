@@ -15,29 +15,29 @@ import java.io.Serializable;
 public class Ticker implements Serializable {
 // <TICKER>,<PER>,<DATE>,<TIME>,<OPEN>,<HIGH>,<LOW>,<CLOSE>,<VOL>,<OPENINT>
 
-    private String Geography;
+    private String geography;
     @CsvBindByName(column = "<TICKER>")
-    private String Ticker;
-    private String TickerShort;
+    private String ticker;
+    private String tickershort;
     @CsvBindByName(column = "<PER>")
-    private String Per;
+    private String per;
     @CsvBindByName(column = "<DATE>")
-    private Integer Date;
+    private Integer date;
     @CsvBindByName(column = "<TIME>")
-    private Integer Time;
+    private Integer time;
     @CsvBindByName(column = "<OPEN>")
-    private float Open;
+    private float open;
     @CsvBindByName(column = "<HIGH>")
-    private float High;
+    private float high;
     @CsvBindByName(column = "<LOW>")
-    private float Low;
+    private float low;
     @CsvBindByName(column = "<CLOSE>")
-    private float Close;
+    private float close;
     @CsvBindByName(column = "<VOL>")
-    private float Volume;
+    private float volume;
     @CsvBindByName(column = "<OPENINT>")
-    private String OpenInt;
-    private String MostRecent;
-    private String Exchange;
+    private String openint;
+    private String mostrecent;
+    private String exchange;
 
 }

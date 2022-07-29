@@ -22,13 +22,21 @@ def main():
     # global redis_pool
     # print("PID %d: initializing redis pool..." % os.getpid())
     # redis_pool = redis.ConnectionPool(host='localhost', port=6379, db=0)
-    print("Starting productimport.py at " + str(datetime.datetime.now()))
-    startTime = time.time()
-    startTimeChar = str(datetime.datetime.now())
+
     ticker_file_location = environ.get('TICKER_FILE_LOCATION', "../data/ticker")
     print("passed in ticker file location " + ticker_file_location)
+
+
+    load_directory(ticker_file_location)
+
+
+def load_directory(ticker_file_location):
+    print("Starting productimport.py at " + str(datetime.datetime.now()), flush=True)
     number_processes = int(environ.get('PROCESSES', '1'))
-    print("passed in PROCESSES " + str(number_processes))
+    print("passed in PROCESSES " + str(number_processes), flush=True)
+    print("File directory is " + ticker_file_location + " processes is " + str(number_processes), flush=True)
+    startTime = time.time()
+    startTimeChar = str(datetime.datetime.now())
     print("process_files_parallel()" + str(startTime))
     for (dirpath, dirnames, filenames) in os.walk(ticker_file_location):
         # print("dirpath=" + dirpath)
@@ -38,7 +46,7 @@ def main():
     # process_file("/data/daily/us/nysestocks/1/asix.us.txt")
     end_time = time.time()
     print("processing complete. start was " + startTimeChar + " end was " + str(datetime.datetime.now()) +
-          " total time " + str(int(end_time - startTime)) + " seconds")
+          " total time " + str(int(end_time - startTime)) + " seconds", flush=True)
 
 
 def process_file(file_name):
@@ -47,11 +55,6 @@ def process_file(file_name):
     process_recents = "false"
     not_recent_dates = set()
     do_load = True
-
-    # print("starting process_file with file name " + file_name + " contains text is " + str(contains_txt))
-    if contains_txt == -1:
-        print("skipping unkown file type " + file_name)
-        return
 
     redis_server = environ.get('REDIS_SERVER', 'localhost')
     redis_port = int(environ.get('REDIS_PORT', '6379'))
@@ -62,7 +65,10 @@ def process_file(file_name):
                            decode_responses=True)
     else:
         conn = redis.Redis(redis_server, redis_port, decode_responses=True)
-
+    # print("starting process_file with file name " + file_name + " contains text is " + str(contains_txt))
+    if contains_txt == -1:
+        print("skipping unkown file type " + file_name)
+        return
     min_load_date = int(environ.get('OLDEST_VALUE'))
     current_load_date = int(environ.get('CURRENT_VALUE'))
 
@@ -95,7 +101,7 @@ def process_file(file_name):
             # print(nextTicker)
             if int(nextTicker.date) >= current_load_date:
                 nextTicker.mostrecent = 'true'
-                print("set mostrecent true")
+                # print("set mostrecent true")
             else:
                 nextTicker.mostrecent = 'false'
                 if int(nextTicker.date) < min_load_date:
@@ -124,12 +130,12 @@ def process_file(file_name):
         # print("rows added from start " + start_time + " ended at " + str(datetime.datetime.now()))
         conn.hset("ticker_load", short_file_name, "start:" + start_time + ":finished:" + str(datetime.datetime.now())
                   + ":rows_in_file:" + str(ticker_idx) + ":rows_loaded:" + str(ticker_loaded))
+        conn.close()
 
-
-def process_files_parallel(dirname, names, numProcesses: int):
+def process_files_parallel(dirname, names, num_processes: int):
     # Process each file in parallel via Poll.map()
     print("starting process_files_parallel")
-    pool = Pool(processes=numProcesses)
+    pool = Pool(processes=num_processes)
     results = pool.map(process_file, [os.path.join(dirname, name)
                                       for name in names if (name.find("txt") > -1 and not name.startswith('.'))])
 

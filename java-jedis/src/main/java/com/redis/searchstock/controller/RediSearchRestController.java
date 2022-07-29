@@ -2,9 +2,12 @@ package com.redis.searchstock.controller;
 
 import com.redis.searchstock.service.RediSearchService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.web.bind.annotation.*;
+
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -13,17 +16,40 @@ import java.util.Map;
 
 @Slf4j
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/1.0/")
+@RequestMapping("/")
 @RestController
 public class RediSearchRestController {
 
     @Inject
     RediSearchService rediSearchService;
 
-
     @GetMapping("/status")
     public String status() {
         return "OK";
+    }
+
+    @GetMapping("/search/")
+    public Map<String,Object> search(
+            @RequestParam(name="search_column")String searchColumn,
+            @RequestParam(name="search_string")String searchString,
+            @RequestParam(name="most_recent", defaultValue = "false")String mostRecent,
+            @RequestParam(name="sort_column", defaultValue="")String sortBy,
+            @RequestParam(name="ascending", defaultValue="false")boolean ascending) {
+        String TickerSearch = '@' + searchColumn + ':' + searchString + '*';
+
+        if (mostRecent == "true") {
+            TickerSearch = TickerSearch + "@mostrecent:{ true }";
+        }
+        log.info("before search TickerSearch = " + TickerSearch);
+        return rediSearchService.search(TickerSearch, 0, 15, sortBy, ascending);
+    }
+
+    @GetMapping("/index")
+    public String index() {
+
+        rediSearchService.createIndex();
+
+        return "Done";
     }
 
 
