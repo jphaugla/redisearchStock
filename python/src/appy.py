@@ -20,7 +20,7 @@ bootstrap = Bootstrap()
 
 redis_server = environ.get('REDIS_SERVER', 'localhost')
 redis_port = int(environ.get('REDIS_PORT', '6379'))
-redis_index = environ.get('REDIS_INDEX', 'ticker')
+redis_index = environ.get('REDIS_INDEX', 'Ticker')
 
 print("beginning of appy.py now")
 
