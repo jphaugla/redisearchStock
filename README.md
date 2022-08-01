@@ -13,12 +13,11 @@ A stock ticker solution typeahead solution based on downloaded stock files.  Use
   - [Download the datafiles](#download-the-datafiles)
   - [Set Environment Variables](#set-environment-variables)
   - [Multiple Deployment options](#multiple-options-for-creating-the-environment)
-  - [Docker Compose](#docker-compose)
+  - [Docker Compose Python](#docker-compose-python)
     - [Prepare the Load](#prepare-the-load)
-    - [Start Ticker Load](#start-ticker-load)
   - [Deploy Python on Linux](#deploy-python)
     - [Create python environment](#create-python-environment)
-    - [Start Ticker Load on Python](#start-ticker-on-python)
+    - [Prepare Ticker Load on Python](#prepare-ticker-on-python)
   - [Kubernetes](#kubernetes)
     - [Install Redis Enterprise](#install-redis-enterprise-k8s)
     - [Add Redisinsights](#add-redisinsights)
@@ -26,6 +25,7 @@ A stock ticker solution typeahead solution based on downloaded stock files.  Use
     - [Add Memtier Benchmark](#memtier-benchmark)
   - [Use the Application](#use-the-application)
     - [Create Index](#create-index)
+    - [Start Ticker Load](#start-ticker-load)
 - [Troubleshooting](#troubleshooting)
 
 
@@ -44,7 +44,7 @@ Uses python to load stock market daily values from download flat files.  Using a
 * [GKE persistent volume claims](https://cloud.google.com/kubernetes-engine/docs/concepts/persistent-volumes)
 
 ### Bootstrap ajax typeahead
-This plugin is in the repository so not setting is needed.  To learn more-follow the directions in the [bootstrap-ajax-typahead github](https://github.com/biggora/bootstrap-ajax-typeahead)
+This plugin is in the repository so no setting is needed.  To learn more-follow the directions in the [bootstrap-ajax-typahead github](https://github.com/biggora/bootstrap-ajax-typeahead)
 
 ## Instructions
 
@@ -74,8 +74,8 @@ environment variable at scripts/app.env.
 | variable             | Original Value  | Desccription                                                                                         |
 |----------------------|-----------------|------------------------------------------------------------------------------------------------------|
 | REDIS_HOST           | redis           | The name of the redis docker container                                                               |
-| REDIS_PORT           | 6379            | redis port                                                                                           |
-| TICKER_FILE_LOCATION | /data           | leave in /data but can use sub-directory to minimize load size                                       | 
+| REDIS_PASSWORD       | <none>          | Redis Password                                                                                       |
+| REDIS_PORT           | 6379            | redis port                                                                                           |                                   | 
 | PROCESSES            | 6               | On larger machines, increases this will increase load speed                                          |
 | WRITE_JSON           | false           | flag to use JSON instead of Hash structures                                                          |
 | OLDEST_VALUE         | 20220101        | Skip any records older than this date                                                                |   
@@ -84,45 +84,21 @@ environment variable at scripts/app.env.
 
 
 ### Multiple options for creating the environment:  
-  * run with docker-compose using a flask and redis container
+  * run with python docker-compose using a flask and redis container
   * installing for mac os
   * running on linux (probably in the cloud)
   * running on kubernetes (example uses GKE)
+  * run using java instead of python This java implemention is in a ![subfolder](./java-redis/README.md)
 
-### Docker Compose 
+### Docker Compose Python
+
 Build just needs to be done initially.  NOTE:  if building a new image for k8s, ensure the Dockerfile is doing a copy of the src directory
-into the image and not relying on docker-compose mount of the src directory 
+into the image and not relying on docker-compose mount of the src directory.  Additionally, docker can be run with the Java application.  See ![java readme](./java-redis/README.md)
 ```bash
 cd python
 docker-compose build
 docker-compose up -d 
 ```
-
-#### Prepare the load
-```
-* If PROCESS_RECENTS is set, set list of recent dates to specifically set the MostRecent flag to false
-  * This is needed when loading the next set of values.  E.g.  Current data is 20220315 and want to ensure three previous dates are false for MostRecent.  
-```bash
-docker exec -it redis redis-cli
-sadd remove_current 20220314 20220313 20220312 
-```
-
-#### Start Ticker Load
-* make sure the TICKER_FILE_LOCATION is good and then start the load
-```bash
-docker exec -it flask bash -c "python TickerImport.py"
-```
-
-Can observe the load progress by watching the load for each file
-```bash
-docker exec -it redis redis-cli 
-hgetall ticker_load
-```
-  * THIS IS HOW to start flask app server
-  * However, it is already running as part of the flask container
- ```bash
-docker exec -it flask bash -c "python appy.py"
- ```
 
 ### Deploy Python
 
@@ -140,7 +116,7 @@ source venv/bin/activate
 ```bash
 source scripts/app.env
 ```
-#### Start Ticker on Python
+#### Prepare Ticker on Python
 * execute python scripts from the src directory
 * if trouble with installing requirements, here are some links
 [Flask on AWS Linux 2](https://thecodinginterface.com/blog/flask-aws-ec2-deployment/)
@@ -149,7 +125,6 @@ source scripts/app.env
 ```bash
 cd src
 pip install -r requirements.txt
-python TickerImport.py
 ```
 
 ### Kubernetes
@@ -259,6 +234,7 @@ vi configmap.yaml
 kubectl apply -f configmap.yaml
 ```
 * deploy the redis-searchstock
+* can switch between the java version and python version by changing image used in stock.yaml.  Jedis version is commented out.
 ```bash
 kubectl apply -f pvc.yaml
 kubectl apply -f stock.yaml
@@ -275,12 +251,6 @@ kubectl port-forward redis-searchstock-c568d9b6b-5t8v6 5000
   * can be issue with hidden files caused by running tar on Mac and deploying on linux see [troubleshooting](#troubleshooting)
 ```bash
 kubectl cp all_tar.tgz redis-searchstock-c568d9b6b-5t8v6:/data
-```
-* log into the python stock flask application  and kick off the load
-  * can adjust the location of data files using environment variable TICKER_FILE_LOCATION
-```bash
-kubectl exec -it redis-searchstock-c568d9b6b-5t8v6 -- bash
-python TickerImport.py
 ```
 
 ##### Publish docker image
@@ -321,6 +291,33 @@ There is python running in the flask container (appy.py) listening for API calls
 cd scripts
 ./redoIndex.sh
 ```
+
+#### Prepare the load
+```
+* If PROCESS_RECENTS is set, set list of recent dates to specifically set the MostRecent flag to false
+  * This is needed when loading the next set of values.  E.g.  Current data is 20220315 and want to ensure three previous dates are false for MostRecent.  
+```bash
+docker exec -it redis redis-cli
+sadd remove_current 20220314 20220313 20220312 
+```
+
+#### Start Ticker Load
+* verify the directory location specified in the script
+```bash
+cd scripts
+./loadFile.sh
+```
+
+Can observe the load progress by watching the load for each file
+```bash
+docker exec -it redis redis-cli 
+hgetall ticker_load
+```
+  * THIS IS HOW to start flask app server
+  * However, it is already running as part of the flask container
+ ```bash
+docker exec -it flask bash -c "python appy.py"
+ ```
 
 Go to the stock type [ahead page](http://localhost:5000) and find the desired stock
 

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Ticker Search</title>
+          <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+            <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
+     <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+  </head>
+  <body>
+   <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+          <img src=./stockBoard.jpg width="80" height="60" alt="">
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <div class="d-flex">
+        <input id="input" class="typeahead" type="text" placeholder="Stock Codes">
+        <button class="btn btn-outline-success" type="button" id="btn_search">Search Stock</button>
+    </div>
+          </div>
+        </div>
+   </nav>
+    <div class="container-fluid">
+    <div class="row" id="tickers">
+    </div>
+    </div>
+    <script src="bower_components/bs-typeahead/js/bootstrap-typeahead.js"></script>
+    <script>
+$('#input.typeahead').typeahead({
+    onSelect: function(item) {
+		console.log(item);
+	},
+	ajax: {
+		url: "http://localhost:5000/search/?search_column=ticker&sort_column=volume&most_recent=true",
+		timeout: 200,
+		displayField: "tickershort",
+		triggerLength: 2,
+		method: "get",
+		loadingClass: "input",
+		preDispatch: function (query) {
+			return {
+				search_string: query
+			}
+		},
+		preProcess: function (data) {
+			if (data.success === false) {
+				// Hide the list, there was some error
+				return false;
+			}
+			// We good!
+			return data;
+		}
+	}
+ });
+ $("#btn_search").click(function() {
+            //alert( "Handler for .click() called." );
+            search_string=""
+            if ($("#input").val()!="") {
+                search_string="&ticker="+$("#input").val()
+            }
+            $.ajax({
+                url: "http://localhost:5000/oneticker/?sort_column=date"+search_string,
+                contentType: "application/json",
+                datatype: "json"
+            }).then(function(data) {
+                var json = $.parseJSON(data)
+                $("#tickers").empty()
+                for (var ticker of json) {
+                   card='<div class="card m-1 p-1" style="width: 18rem;">'
+                    card=card+'<div class="card-header">'
+                      card=card+'<h3 class="card-title">'+(ticker.date).substring(0,4)+"-"+(ticker.date).substring(4,6)+"-"+(ticker.date).substring(6)+'</h3>'
+                    card=card+'</div>'
+                    card=card+'<div class="card-footer">'
+                        card=card+'<p class="card-text align-bottom"><strong>open:</strong> $'+number_format(ticker.open, 2, '.', ',' )+' <strong>close:</strong> $'+number_format(ticker.close, 2, '.', ',' )+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>high:</strong> $'+number_format(ticker.high, 2, '.', ',' )+' <strong>low:</strong> $'+number_format(ticker.low, 2, '.', ',' )+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>volume:</strong> '+number_format(ticker.volume, 0, ' ', ',' )+'</p>'
+                    card=card+'</div>'
+                    card=card+'</div>'
+
+                    $("#tickers").append(card);
+                }
+
+            });
+        });
+function number_format(number, decimals, decPoint, thousandsSep){
+    decimals = decimals || 0;
+    number = parseFloat(number);
+
+    if(!decPoint || !thousandsSep){
+        decPoint = '.';
+        thousandsSep = ',';
+    }
+
+    var roundedNumber = Math.round( Math.abs( number ) * ('1e' + decimals) ) + '';
+    var numbersString = decimals ? roundedNumber.slice(0, decimals * -1) : roundedNumber;
+    var decimalsString = decimals ? roundedNumber.slice(decimals * -1) : '';
+    var formattedNumber = "";
+
+    while(numbersString.length > 3){
+        formattedNumber += thousandsSep + numbersString.slice(-3)
+        numbersString = numbersString.slice(0,-3);
+    }
+
+    return (number < 0 ? '-' : '') + numbersString + formattedNumber + (decimalsString ? (decPoint + decimalsString) : '');
+}
+
+      </script>
+  </body>
+</html>

@@ -17,6 +17,8 @@ spec:
       containers:
       - name:  redis-searchstock  # Container name 
         image: jphaugla/redis-searchstock:latest 
+        # same functionality but in java instead of python
+        # image: jphaugla/jedis-searchstock:latest 
         imagePullPolicy: Always 
         ports:  
          - containerPort: 8080
