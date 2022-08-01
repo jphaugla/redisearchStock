@@ -66,9 +66,9 @@ $('#input.typeahead').typeahead({
                       card=card+'<h3 class="card-title">'+(ticker.date).substring(0,4)+"-"+(ticker.date).substring(4,6)+"-"+(ticker.date).substring(6)+'</h3>'
                     card=card+'</div>'
                     card=card+'<div class="card-footer">'
-                        card=card+'<p class="card-text align-bottom"><strong>open:</strong> $'+ticker.open+' <strong>close:</strong> $'+ticker.close+'</p>'
-                        card=card+'<p class="card-text align-bottom"><strong>high:</strong> $'+ticker.high+' <strong>low:</strong> $'+ticker.low+'</p>'
-                        card=card+'<p class="card-text align-bottom"><strong>volume:</strong> '+numberWithCommas(ticker.volume)+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>open:</strong> $'+number_format(ticker.open, 2, '.', ',' )+' <strong>close:</strong> $'+number_format(ticker.close, 2, '.', ',' )+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>high:</strong> $'+number_format(ticker.high, 2, '.', ',' )+' <strong>low:</strong> $'+number_format(ticker.low, 2, '.', ',' )+'</p>'
+                        card=card+'<p class="card-text align-bottom"><strong>volume:</strong> '+number_format(ticker.volume, 0, ' ', ',' )+'</p>'
                     card=card+'</div>'
                     card=card+'</div>'
 
@@ -77,8 +77,26 @@ $('#input.typeahead').typeahead({
 
             });
         });
-function numberWithCommas(x) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+function number_format(number, decimals, decPoint, thousandsSep){
+    decimals = decimals || 0;
+    number = parseFloat(number);
+
+    if(!decPoint || !thousandsSep){
+        decPoint = '.';
+        thousandsSep = ',';
+    }
+
+    var roundedNumber = Math.round( Math.abs( number ) * ('1e' + decimals) ) + '';
+    var numbersString = decimals ? roundedNumber.slice(0, decimals * -1) : roundedNumber;
+    var decimalsString = decimals ? roundedNumber.slice(decimals * -1) : '';
+    var formattedNumber = "";
+
+    while(numbersString.length > 3){
+        formattedNumber += thousandsSep + numbersString.slice(-3)
+        numbersString = numbersString.slice(0,-3);
+    }
+
+    return (number < 0 ? '-' : '') + numbersString + formattedNumber + (decimalsString ? (decPoint + decimalsString) : '');
 }
 
       </script>

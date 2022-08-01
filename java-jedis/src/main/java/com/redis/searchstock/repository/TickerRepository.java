@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Repository
 public class TickerRepository {
-    private static final String Prefix="ticker:";
+
     @Autowired
     private RedisTemplate<Object, Object> redisTemplate;
     @Autowired
@@ -22,24 +22,20 @@ public class TickerRepository {
     ObjectMapper mapper = new ObjectMapper();
     public String create (Ticker ticker) {
         // log.info("in uploadCSVFile");
-        String[] parts = ticker.getTicker().split(Pattern.quote("."));
-        // log.info("after split with parts " + parts[0]);
-        String tickershort = parts[0];
-        String geography = parts[1];
+        String[] tickershort = ticker.createTickerShortGeography();
         // String tickershort = "AAA";
         // log.info("after createtickershort " + tickershort);
-        ticker.setTickershort(tickershort);
-        ticker.setGeography(geography);
+        ticker.setTickershort(tickershort[0]);
+        ticker.setGeography(tickershort[1]);
         // some test code to eliminate nulls
         // ticker.setGeography("US");
         // ticker.setMostRecent("true");
         // ticker.setExchange("US NYSE");
         Map<Object,Object> TickerHash = mapper.convertValue(ticker, Map.class);
-        String tickerKey = Prefix + ticker.getTicker() + ':' + ticker.getDate().toString();
+        String tickerKey = ticker.createID();
         // log.info("tickerKey is " + tickerKey);
-        stringRedisTemplate.opsForValue().set("beforeopsforhash", "now");
         redisTemplate.opsForHash().putAll(tickerKey, TickerHash);
-        stringRedisTemplate.opsForValue().set("afteropsforhash", "now");
+
         return "Success\n";
     }
 

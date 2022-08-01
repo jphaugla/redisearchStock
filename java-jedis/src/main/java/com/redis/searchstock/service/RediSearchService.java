@@ -1,9 +1,12 @@
 package com.redis.searchstock.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.redis.searchstock.domain.Ticker;
+import com.redis.searchstock.domain.TickerCharacter;
 import jakarta.annotation.PostConstruct;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.*;
@@ -70,6 +73,7 @@ public class RediSearchService {
         log.info("Configuration Index: " + indexName + " Host: " + redisHost + " Port " + String.valueOf(redisPort));
 
         client = new JedisPooled(redisHost, redisPort);
+       // mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
     }
 
@@ -83,7 +87,7 @@ public class RediSearchService {
      * @param sortBy
      * @return an object with meta: query header and docs: the list of documents
      */
-    public Map<String, Object> search(String queryString, int offset, int limit, String sortBy, boolean ascending) {
+    public SearchResult search(String queryString, int offset, int limit, String sortBy, boolean ascending) {
         // Let's put all the informations in a Map top make it easier to return JSON object
         // no need to have "predefine mapping"
         Map<String, Object> returnValue = new HashMap<>();
@@ -102,14 +106,14 @@ public class RediSearchService {
         SearchResult queryResult = client.ftSearch(indexName, query);
 
         // Adding the query string for information purpose
-        resultMeta.put("queryString", queryString);
+        // resultMeta.put("queryString", queryString);
 
         // Get the total number of documents and other information for this query:
-        resultMeta.put("totalResults", queryResult.getTotalResults());
-        resultMeta.put("offset", offset);
-        resultMeta.put("limit", limit);
+        // resultMeta.put("totalResults", queryResult.getTotalResults());
+        // resultMeta.put("offset", offset);
+        // resultMeta.put("limit", limit);
 
-        returnValue.put("meta", resultMeta);
+        // returnValue.put("meta", resultMeta);
 
         // the docs are returned as an array of document, with the document itself being a list of k/v json documents
         // not the easiest to manipulate
@@ -117,12 +121,13 @@ public class RediSearchService {
         // the `docs` will contain the list of document that is more developer friendly
         //      capture in  https://github.com/RediSearch/JRediSearch/issues/121
         // returnValue.put("raw_docs", queryResult.docs);
-        returnValue.put("raw_docs", queryResult.getDocuments());
+        // returnValue.put("raw_docs", queryResult.getDocuments();
+        ///returnValue = queryResult.getDocuments();
 
 
         // remove the properties array and create attributes
-        List<Map<String, Object>> docsToReturn = new ArrayList<>();
-        List<Document> docs = queryResult.getDocuments();
+       //  List<Map<String, Object>> docsToReturn = new ArrayList<>();
+      /*  List<Document> docs = queryResult.getDocuments();
 
         for (Document doc : docs) {
 
@@ -141,11 +146,12 @@ public class RediSearchService {
         }
 
         returnValue.put("docs", docsToReturn);
-
-        return returnValue;
+ */
+        return queryResult;
     }
 
-    public Map<String, Object> search(String queryString) {
+
+    public SearchResult search(String queryString) {
         return search(queryString, 0, 10, null, true);
     }
 
@@ -254,13 +260,6 @@ public class RediSearchService {
             fieldPrefix = "";
         }
         IndexDefinition indexRule = new IndexDefinition(indexType).setPrefixes(new String[]{"ticker:"});
-          /* can't alias column names using this
-                Schema schema = new Schema().addTextField(fieldPrefix + "ticker", 1.0)
-                .addTextField(fieldPrefix + "tickershort", 1.0)
-                .addTagField(fieldPrefix + "mostrecent")
-                .addSortableNumericField(fieldPrefix + "date")
-                .addSortableNumericField(fieldPrefix + "volume");
-          */
         Schema schema = new Schema()
                 .addField( new Schema.TextField(FieldName.of(fieldPrefix + "ticker").as("ticker")))
                 .addField(new Schema.TextField(FieldName.of(fieldPrefix + "tickershort").as("tickershort")))
@@ -274,5 +273,54 @@ public class RediSearchService {
             client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
         }
 
+    }
+
+    public String convertResults(SearchResult searchResult) throws JsonProcessingException {
+        List<Document> docs = searchResult.getDocuments();
+        ArrayList<TickerCharacter> tickerList = new ArrayList<TickerCharacter>();
+        for ( Document oneDoc : docs) {
+            TickerCharacter tickerRec = new TickerCharacter();
+            Iterable<Map.Entry<String, Object>> properties = oneDoc.getProperties();
+            tickerRec.setId(oneDoc.getId());
+            for (Map.Entry<String, Object> oneProp : properties) {
+                String key = oneProp.getKey();
+                String value = oneProp.getValue().toString();
+                if (key.equals("ticker")) {
+                    tickerRec.setTicker(value);
+                    String[] parts = tickerRec.createTickerShortGeography();
+                    tickerRec.setTickershort(parts[0]);
+                    tickerRec.setGeography(parts[1]);
+                } else if (key.equals("date")) {
+                    tickerRec.setDate(value);
+                } else if (key.equals("high")) {
+                    tickerRec.setHigh (value);
+                } else if (key.equals("low")) {
+                    tickerRec.setLow(value);
+                } else if (key.equals("open")) {
+                    tickerRec.setOpen(value);
+                } else if (key.equals("volume")) {
+                    tickerRec.setVolume(value);
+                } else if (key.equals("close")) {
+                    tickerRec.setClose(value);
+                } else if (key.equals("mostrecent")) {
+                    tickerRec.setMostrecent(value);
+                } else if (key.equals("exchange")) {
+                    tickerRec.setExchange(value);
+                } else if (key.equals("per")) {
+                    tickerRec.setPer(value);
+                } else if (key.equals("openint")) {
+                    tickerRec.setOpenint(value);
+                } else if (key.equals("time")) {
+                    tickerRec.setTime(value);
+                }
+                // log.info(String.valueOf(oneProp));
+                // log.info("value is " + value);
+                //  log.info("key is " + key );
+            }
+            tickerList.add(tickerRec);
+        }
+        String jsonList = mapper.writeValueAsString(tickerList);
+        log.info(jsonList);
+        return (jsonList);
     }
 }

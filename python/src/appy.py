@@ -12,6 +12,7 @@ from redis.commands.search.field import TextField, TagField, NumericField
 from redis.commands.search.indexDefinition import IndexDefinition, IndexType
 from redis.commands.search.query import NumericFilter, Query
 import jsonpickle
+import TickerImport
 
 app = Flask(__name__)
 app.debug = True
@@ -24,8 +25,8 @@ redis_index = environ.get('REDIS_INDEX', 'ticker')
 print("beginning of appy.py now")
 
 
-@app.route('/', defaults={'path': ''}, methods=['PUT', 'GET'])
-@app.route('/<path:path>', methods=['PUT', 'GET', 'DELETE'])
+@app.route('/', defaults={'path': ''}, methods=['PUT', 'GET', 'POST'])
+@app.route('/<path:path>', methods=['PUT', 'GET', 'POST', 'DELETE'])
 def home(path):
     redis_password = ""
     return_string = ""
@@ -41,8 +42,6 @@ def home(path):
         db = redis.Redis(redis_server, redis_port, decode_responses=True)
 
     if request.method == 'PUT':
-        # if prod_idx is set it is a replace
-        # if proc_idx is not set, is insert
         print('in PUT')
         event = request.json
         print('event is %s ' % event)
@@ -83,8 +82,8 @@ def home(path):
             # print("TickerReturn")
             # print(TickerReturn)
             # print("TickerReturn docs 0")
-            print("docs array 0 ", flush=True)
-            print(TickerReturn.docs[0], flush=True)
+            # print("docs array 0 ", flush=True)
+            # print(TickerReturn.docs[0], flush=True)
             # print("TickerReturn docs 0 id")
             # print(TickerReturn.docs[0].id, flush=True)
             # print("TickerReturn docs 0 json", flush=True)
@@ -100,7 +99,8 @@ def home(path):
                     results = Ticker(id=doc_results.id, payload=doc_results.payload,
                                      ticker=json_results["ticker"],
                                      tickershort=json_results["tickershort"], open=json_results["open"],
-                                     close=json_results["close"], high=json_results["high"], low=json_results["low"])
+                                     close=json_results["close"], high=json_results["high"], low=json_results["low"],
+                                     volume=json_results["volume"])
                 else:
                     results = TickerReturn.docs[i]
                 TickerResults.append(results)
@@ -111,9 +111,7 @@ def home(path):
             # return_string = TickerResults
             print("final return string", flush=True)
             print(return_string, flush=True)
-
-        # category passed in will be Category name, return Category attributes
-
+        # this is returning all the rows for the one ticker in the box
         elif path == 'oneticker/':
             get_ticker = request.args.get("ticker")
             print("reporting ticket is ", get_ticker)
@@ -163,7 +161,12 @@ def home(path):
             response = app.send_static_file('index.html')
             response.headers['Content-Type'] = 'text/html'
             return_string = response
-
+    elif request.method == 'POST':
+        if path == 'upload-csv-file':
+            get_directory = request.args.get("directory")
+            print("loading files with this directory " + get_directory)
+            TickerImport.load_directory(get_directory)
+            return_string = "Done"
     return return_string
 
 
