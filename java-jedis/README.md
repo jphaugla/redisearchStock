@@ -1,6 +1,6 @@
 # RediSearchStock with Jedis
 
-The ![main readme](../README.md) is up one level.
+The [main readme](../README.md) is up one level.
 
 ## Important Links/Notes
 - [Jedis and Spring version](https://stackoverflow.com/questions/72194259/is-it-possible-to-use-the-newest-jedis-in-spring-project)

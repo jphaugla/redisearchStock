@@ -76,12 +76,13 @@ environment variable at scripts/app.env.
 |----------------------|-----------------|------------------------------------------------------------------------------------------------------|
 | REDIS_HOST           | redis           | The name of the redis docker container                                                               |
 | REDIS_PASSWORD       | <none>          | Redis Password                                                                                       |
-| REDIS_PORT           | 6379            | redis port                                                                                           |                                   | 
+| REDIS_PORT           | 6379            | redis port                                                                                           |     
 | PROCESSES            | 6               | On larger machines, increases this will increase load speed                                          |
 | WRITE_JSON           | false           | flag to use JSON instead of Hash structures                                                          |
 | OLDEST_VALUE         | 20220101        | Skip any records older than this date                                                                |   
 | CURRENT_VALUE        | 20220414        |  Use this as current value.  This also sets mostrecent flag                                          |
 | PROCESS_RECENTS      | false           | will set most recent flag for specified keys back to false (requires creation of specific redis set) |
+|----------------------|-----------------|------------------------------------------------------------------------------------------------------|
 
 
 ### Multiple options for creating the environment:  
@@ -89,12 +90,12 @@ environment variable at scripts/app.env.
   * installing for mac os
   * running on linux (probably in the cloud)
   * running on kubernetes (example uses GKE)
-  * run using java instead of python This java implemention is in a ![subfolder](java-jedis/README.md)
+  * run using java instead of python This java implemention is in a [subfolder](java-jedis/README.md)
 
 ### Docker Compose Python
 
 Build just needs to be done initially.  NOTE:  if building a new image for k8s, ensure the Dockerfile is doing a copy of the src directory
-into the image and not relying on docker-compose mount of the src directory.  Additionally, docker can be run with the Java application.  See ![java readme](java-jedis/README.md)
+into the image and not relying on docker-compose mount of the src directory.  Additionally, docker can be run with the Java application.  See [java readme](java-jedis/README.md)
 ```bash
 cd python
 docker-compose build
