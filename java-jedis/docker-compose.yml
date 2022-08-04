@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./redis_data:/data
+
+  insight:
+    image: "redislabs/redisinsight:latest"
+    container_name: insight
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./redisinsight:/db
+    depends_on:
+      - redis
+
+  jedis-stock:
+    image: jedis-searchstock
+    container_name: jedis-stock
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TICKER_FILE_LOCATION=/data/daily/us/nyse etfs
+      - PROCESSES=6
+      - PYTHONBUFFERED=0
+      - WRITE_JSON=false
+      - OLDEST_VALUE=20220101
+      - CURRENT_VALUE=20220414
+      - REDIS_INDEX=Ticker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '5000:5000'
+    volumes:
+      - "./src/:/app"
+      - "../data/:/data"
+    depends_on:
+      - redis
+
+#  trino:
+#    image: jruaux/trino-redisearch
+#    hostname: trino
+#    container_name: trino
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      - redis
+#    environment:
+#      REDISEARCH_URI: 'redis://redis:6379'
