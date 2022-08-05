@@ -18,7 +18,7 @@ app = Flask(__name__)
 app.debug = True
 bootstrap = Bootstrap()
 
-redis_server = environ.get('REDIS_SERVER', 'localhost')
+redis_server = environ.get('REDIS_HOST', 'localhost')
 redis_port = int(environ.get('REDIS_PORT', '6379'))
 redis_index = environ.get('REDIS_INDEX', 'Ticker')
 

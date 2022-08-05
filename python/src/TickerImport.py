@@ -56,7 +56,7 @@ def process_file(file_name):
     not_recent_dates = set()
     do_load = True
 
-    redis_server = environ.get('REDIS_SERVER', 'localhost')
+    redis_server = environ.get('REDIS_HOST', 'localhost')
     redis_port = int(environ.get('REDIS_PORT', '6379'))
     redis_password = environ.get('REDIS_PASSWORD', "")
 
