@@ -8,6 +8,7 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import com.redis.searchstock.domain.Ticker;
 import com.redis.searchstock.domain.TickerCharacter;
 import jakarta.annotation.PostConstruct;
+import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.*;
 
@@ -69,10 +70,18 @@ public class RediSearchService {
         indexName = env.getProperty("redis.index","Ticker");
         redisHost = env.getProperty("redis.host","localhost");
         redisPort = Integer.parseInt(env.getProperty("redis.port", "6379"));
+        ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
+        poolConfig.setMaxIdle(50);
+        poolConfig.setMaxTotal(50);
 
         log.info("Configuration Index: " + indexName + " Host: " + redisHost + " Port " + String.valueOf(redisPort));
 
-        client = new JedisPooled(redisHost, redisPort);
+        if(env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
+            String redisPassword = env.getProperty("spring.redis.password");
+            client = new JedisPooled(poolConfig, redisHost, redisPort, Protocol.DEFAULT_TIMEOUT, redisPassword);
+        } else {
+            client = new JedisPooled(poolConfig, redisHost, redisPort);
+        }
 
     }
 

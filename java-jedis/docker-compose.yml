@@ -1,12 +1,11 @@
-version: '3'
+version: '3.9'
 
 services:
   redis:
     image: redis/redis-stack:latest
     container_name: redis
     environment:
-      # ALLOW_EMPTY_PASSWORD is recommended only for development.
-      - ALLOW_EMPTY_PASSWORD=yes
+      REDIS_ARGS: "--requirepass jasonrocks"
     ports:
       - '6379:6379'
     volumes:
@@ -36,6 +35,7 @@ services:
       - CURRENT_VALUE=20220414
       - REDIS_INDEX=Ticker
       - REDIS_OSS=false
+      - REDIS_PASSWORD=jasonrocks
     build:
       context: .
       dockerfile: Dockerfile
