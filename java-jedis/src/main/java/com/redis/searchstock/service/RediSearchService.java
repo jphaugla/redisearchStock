@@ -73,7 +73,6 @@ public class RediSearchService {
         log.info("Configuration Index: " + indexName + " Host: " + redisHost + " Port " + String.valueOf(redisPort));
 
         client = new JedisPooled(redisHost, redisPort);
-       // mapper.enable(SerializationFeature.INDENT_OUTPUT);
 
     }
 

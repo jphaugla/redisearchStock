@@ -35,6 +35,7 @@ services:
       - OLDEST_VALUE=20220101
       - CURRENT_VALUE=20220414
       - REDIS_INDEX=Ticker
+      - REDIS_OSS=false
     build:
       context: .
       dockerfile: Dockerfile

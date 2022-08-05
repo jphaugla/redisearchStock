@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 
+import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -37,15 +38,29 @@ public class RedisConfig {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxIdle(50);
         poolConfig.setMaxTotal(50);
-        RedisStandaloneConfiguration redisServerConf = new RedisStandaloneConfiguration();
-        redisServerConf.setHostName(env.getProperty("spring.redis.host"));
-        redisServerConf.setPort(Integer.parseInt(env.getProperty("spring.redis.port")));
-        if(env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
-            redisServerConf.setPassword(RedisPassword.of(env.getProperty("spring.redis.password")));
-        }
         JedisClientConfiguration.JedisClientConfigurationBuilder clientConfig = JedisClientConfiguration.builder();
         clientConfig.usePooling().poolConfig(poolConfig);
-        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(redisServerConf, clientConfig.build());
+        JedisConnectionFactory jedisConnectionFactory;
+        String host = env.getProperty("spring.redis.host");
+        Integer port = Integer.parseInt(env.getProperty("spring.redis.port"));
+        if(env.getProperty("redis.oss").equals("true")) {
+            RedisClusterConfiguration redisServerConf;
+            redisServerConf = new RedisClusterConfiguration ();
+            redisServerConf.clusterNode(host, port);
+            if(env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
+                redisServerConf.setPassword(RedisPassword.of(env.getProperty("spring.redis.password")));
+            }
+            jedisConnectionFactory = new JedisConnectionFactory(redisServerConf, clientConfig.build());
+        } else {
+            RedisStandaloneConfiguration redisServerConf = new RedisStandaloneConfiguration();
+            redisServerConf.setHostName(host);
+            redisServerConf.setPort(port);
+            if(env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
+                redisServerConf.setPassword(RedisPassword.of(env.getProperty("spring.redis.password")));
+            }
+            jedisConnectionFactory = new JedisConnectionFactory(redisServerConf, clientConfig.build());
+        }
+
         return jedisConnectionFactory;
     }
 
