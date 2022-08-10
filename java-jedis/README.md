@@ -37,14 +37,16 @@ docker image push jphaugla/jedis-searchstock:latest
 ```bash
 docker stop jedis-stock
 ```
-* on redhat
+
+### Install Java
+#### on redhat
   * install java 
   * set java home
 ```bash
 sudo yum install java-18-openjdk
 export JAVA_HOME=/usr/lib/jvm/java-18-openjdk-18.0.1.0.10-2.rolling.el7.x86_64
 ```
-  * download and install maven following [these steps](https://linuxize.com/post/how-to-install-apache-maven-on-centos-7)- NOTE:  yum installs older version
+  * download and install maven following [these steps](https://linuxize.com/post/how-to-install-apache-maven-on-centos-7) - NOTE:  yum installs older version
   * this worked with java 18
 ```bash
 export JAVA_HOME=/usr/lib/jvm/java-18-openjdk-18.0.1.0.10-2.rolling.el7.x86_64
@@ -52,8 +54,22 @@ export M2_HOME=/opt/maven
 export MAVEN_HOME=/opt/maven
 export PATH=${M2_HOME}/bin:${PATH}
 ```
+
+#### on ubuntu
+```bash
+mkdir binaries
+cd binaries
+wget https://download.oracle.com/java/18/latest/jdk-18_linux-x64_bin.deb
+sudo apt install ./jdk-18_linux-x64_bin.deb
+cat <<EOF | sudo tee /etc/profile.d/jdk18.sh
+export JAVA_HOME=/usr/lib/jvm/jdk-18
+export PATH=\$PATH:\$JAVA_HOME/bin
+EOF
+```
+  * download and install maven flollowing [these steps](https://phoenixnap.com/kb/install-maven-on-ubuntu)  Note:  apt-get installs older version
 ### Change address in index.html
-The IP address for the API call is set to localhost.  This must be changed for the IP address of the application server.  The index.html file is at [index.html](src/main/resources/index.html)  replace all occurrences of localhost with the public ip address of the application server machine  
+The IP address for the API call is set to localhost.  This must be changed for the IP address of the application server.  The index.html file is at [index.html](src/main/resources/index.html) 
+replace all occurrences of localhost with the public ip address of the application server machine  
 
 ### Compile application
 ```bash

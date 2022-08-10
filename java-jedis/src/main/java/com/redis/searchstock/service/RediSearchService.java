@@ -2,13 +2,13 @@ package com.redis.searchstock.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.redis.searchstock.domain.Ticker;
 import com.redis.searchstock.domain.TickerCharacter;
 import jakarta.annotation.PostConstruct;
-import org.springframework.data.redis.connection.RedisPassword;
+import org.apache.commons.pool2.PooledObject;
+import org.apache.commons.pool2.PooledObjectFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.*;
 
@@ -51,6 +51,8 @@ public class RediSearchService {
     IndexDefinition.Type indexType = IndexDefinition.Type.HASH;
     String fieldPrefix = "";
     JedisPooled client;
+    JedisCluster cluster_client;
+
     private static final String Prefix="ticker:";
 
     String indexName = "idx:movie"; // default name
@@ -66,9 +68,28 @@ public class RediSearchService {
     private void init() throws URISyntaxException {
         log.info("Init RediSearchService");
 
+        client = jedis_connection();
+
+        if(env.getProperty("redis.oss").equals("true")) {
+            //  set up a redis cluster to get the topology and can
+            HostAndPort hostAndPort = new HostAndPort(redisHost, redisPort);
+            if(env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
+                String redisPassword = env.getProperty("spring.redis.password");
+                log.info("before cluster create " + redisPassword);
+                cluster_client = new JedisCluster(hostAndPort, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, 10, redisPassword, new ConnectionPoolConfig());
+            } else {
+                cluster_client = new JedisCluster(hostAndPort, Protocol.DEFAULT_TIMEOUT, 10, new ConnectionPoolConfig());
+            }
+
+        }
+
+    }
+
+    private JedisPooled jedis_connection() {
         // Get the configuration from the application properties/environment
-        indexName = env.getProperty("redis.index","Ticker");
-        redisHost = env.getProperty("redis.host","localhost");
+        JedisPooled jedisPooled;
+        indexName = env.getProperty("redis.index", "Ticker");
+        redisHost = env.getProperty("redis.host", "localhost");
         redisPort = Integer.parseInt(env.getProperty("redis.port", "6379"));
         ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
         poolConfig.setMaxIdle(50);
@@ -76,13 +97,13 @@ public class RediSearchService {
 
         log.info("Configuration Index: " + indexName + " Host: " + redisHost + " Port " + String.valueOf(redisPort));
 
-        if(env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
+        if (env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
             String redisPassword = env.getProperty("spring.redis.password");
-            client = new JedisPooled(poolConfig, redisHost, redisPort, Protocol.DEFAULT_TIMEOUT, redisPassword);
+            jedisPooled = new JedisPooled(poolConfig, redisHost, redisPort, Protocol.DEFAULT_TIMEOUT, redisPassword);
         } else {
-            client = new JedisPooled(poolConfig, redisHost, redisPort);
+            jedisPooled = new JedisPooled(poolConfig, redisHost, redisPort);
         }
-
+        return jedisPooled;
     }
 
     /**
@@ -260,7 +281,7 @@ public class RediSearchService {
 
 
     public void createIndex() {
-        if (env.getProperty("write_json","false") == "true") {
+        if (env.getProperty("write_json", "false") == "true") {
             indexType = IndexDefinition.Type.JSON;
             fieldPrefix = "$.";
         } else {
@@ -269,16 +290,34 @@ public class RediSearchService {
         }
         IndexDefinition indexRule = new IndexDefinition(indexType).setPrefixes(new String[]{"ticker:"});
         Schema schema = new Schema()
-                .addField( new Schema.TextField(FieldName.of(fieldPrefix + "ticker").as("ticker")))
+                .addField(new Schema.TextField(FieldName.of(fieldPrefix + "ticker").as("ticker")))
                 .addField(new Schema.TextField(FieldName.of(fieldPrefix + "tickershort").as("tickershort")))
                 .addField(new Schema.Field(FieldName.of(fieldPrefix + "mostrecent").as("mostrecent"), Schema.FieldType.TAG))
-                .addField( new Schema.Field(FieldName.of(fieldPrefix + "date").as("date"), Schema.FieldType.NUMERIC))
-                .addField( new Schema.Field(FieldName.of(fieldPrefix + "volume").as("volume"), Schema.FieldType.NUMERIC));
+                .addField(new Schema.Field(FieldName.of(fieldPrefix + "date").as("date"), Schema.FieldType.NUMERIC))
+                .addField(new Schema.Field(FieldName.of(fieldPrefix + "volume").as("volume"), Schema.FieldType.NUMERIC));
+        if(env.getProperty("redis.oss").equals("true")) {
+            Map<String, ConnectionPool> clusterNodes = cluster_client.getClusterNodes();
+            Collection<ConnectionPool> values = clusterNodes.values();
+            values.forEach(jedisPool -> {
+                Connection connection = jedisPool.getResource();
+                String string_connect = connection.toString();
+                log.info ("a connection is " + string_connect);
+                String connectString = string_connect.replaceAll("[^\\d.:]", "");
+                log.info("connectString is " + connectString);
+                String[] connectArray = connectString.split(":");
+                JedisPooled jedisPooled = jedis_connection();
+                tryIndex(jedisPooled, indexRule, schema);
+            });
+        } else {
+            tryIndex(client, indexRule, schema);
+        }
+    }
+    public void tryIndex(JedisPooled jedis_client, IndexDefinition indexRule, Schema schema) {
         try {
-            client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
+            jedis_client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
         } catch (Exception e) {
-            client.ftDropIndex("Ticker");
-            client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
+            jedis_client.ftDropIndex("Ticker");
+            jedis_client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
         }
 
     }
