@@ -67,8 +67,10 @@ public class RediSearchService {
     @PostConstruct
     private void init() throws URISyntaxException {
         log.info("Init RediSearchService");
-
-        client = jedis_connection();
+        redisHost = env.getProperty("redis.host", "localhost");
+        redisPort = Integer.parseInt(env.getProperty("redis.port", "6379"));
+        client = jedis_connection(redisHost, redisPort);
+        indexName = env.getProperty("redis.index", "Ticker");
 
         if(env.getProperty("redis.oss").equals("true")) {
             //  set up a redis cluster to get the topology and can
@@ -85,23 +87,22 @@ public class RediSearchService {
 
     }
 
-    private JedisPooled jedis_connection() {
+    private JedisPooled jedis_connection(String host, Integer port) {
         // Get the configuration from the application properties/environment
         JedisPooled jedisPooled;
-        indexName = env.getProperty("redis.index", "Ticker");
-        redisHost = env.getProperty("redis.host", "localhost");
-        redisPort = Integer.parseInt(env.getProperty("redis.port", "6379"));
+
+
         ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
         poolConfig.setMaxIdle(50);
         poolConfig.setMaxTotal(50);
 
-        log.info("Configuration Index: " + indexName + " Host: " + redisHost + " Port " + String.valueOf(redisPort));
+        log.info("Configuration Index: " + indexName + " Host: " + host + " Port " + String.valueOf(port));
 
         if (env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
             String redisPassword = env.getProperty("spring.redis.password");
-            jedisPooled = new JedisPooled(poolConfig, redisHost, redisPort, Protocol.DEFAULT_TIMEOUT, redisPassword);
+            jedisPooled = new JedisPooled(poolConfig, host, port, Protocol.DEFAULT_TIMEOUT, redisPassword);
         } else {
-            jedisPooled = new JedisPooled(poolConfig, redisHost, redisPort);
+            jedisPooled = new JedisPooled(poolConfig, host , port);
         }
         return jedisPooled;
     }
@@ -305,7 +306,7 @@ public class RediSearchService {
                 String connectString = string_connect.replaceAll("[^\\d.:]", "");
                 log.info("connectString is " + connectString);
                 String[] connectArray = connectString.split(":");
-                JedisPooled jedisPooled = jedis_connection();
+                JedisPooled jedisPooled = jedis_connection(connectArray[0], Integer.parseInt(connectArray[1]));
                 tryIndex(jedisPooled, indexRule, schema);
             });
         } else {
@@ -313,6 +314,7 @@ public class RediSearchService {
         }
     }
     public void tryIndex(JedisPooled jedis_client, IndexDefinition indexRule, Schema schema) {
+        log.info("rebuilding index on " + jedis_client.getPool().getResource().toString());
         try {
             jedis_client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
         } catch (Exception e) {
