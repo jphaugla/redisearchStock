@@ -7,8 +7,7 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import com.redis.searchstock.domain.Ticker;
 import com.redis.searchstock.domain.TickerCharacter;
 import jakarta.annotation.PostConstruct;
-import org.apache.commons.pool2.PooledObject;
-import org.apache.commons.pool2.PooledObjectFactory;
+
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.*;
 
@@ -316,10 +315,10 @@ public class RediSearchService {
     public void tryIndex(JedisPooled jedis_client, IndexDefinition indexRule, Schema schema) {
         log.info("rebuilding index on " + jedis_client.getPool().getResource().toString());
         try {
-            jedis_client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
+            jedis_client.ftCreate(indexName, IndexOptions.defaultOptions().setDefinition(indexRule), schema);
         } catch (Exception e) {
-            jedis_client.ftDropIndex("Ticker");
-            jedis_client.ftCreate("Ticker", IndexOptions.defaultOptions().setDefinition(indexRule), schema);
+            jedis_client.ftDropIndex(indexName);
+            jedis_client.ftCreate(indexName, IndexOptions.defaultOptions().setDefinition(indexRule), schema);
         }
 
     }
