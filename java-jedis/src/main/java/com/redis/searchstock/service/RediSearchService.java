@@ -49,7 +49,7 @@ public class RediSearchService {
 
     IndexDefinition.Type indexType = IndexDefinition.Type.HASH;
     String fieldPrefix = "";
-    JedisPooled client;
+    UnifiedJedis client;
     JedisCluster cluster_client;
 
     private static final String Prefix="ticker:";
@@ -72,7 +72,7 @@ public class RediSearchService {
         indexName = env.getProperty("redis.index", "Ticker");
 
         if(env.getProperty("redis.oss").equals("true")) {
-            //  set up a redis cluster to get the topology and can
+            //  set up a redis cluster to get the topology to create the index on each shard
             HostAndPort hostAndPort = new HostAndPort(redisHost, redisPort);
             if(env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
                 String redisPassword = env.getProperty("spring.redis.password");
@@ -86,9 +86,9 @@ public class RediSearchService {
 
     }
 
-    private JedisPooled jedis_connection(String host, Integer port) {
+    private UnifiedJedis jedis_connection(String host, Integer port) {
         // Get the configuration from the application properties/environment
-        JedisPooled jedisPooled;
+        UnifiedJedis unifiedJedis;
 
 
         ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
@@ -99,11 +99,11 @@ public class RediSearchService {
 
         if (env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
             String redisPassword = env.getProperty("spring.redis.password");
-            jedisPooled = new JedisPooled(poolConfig, host, port, Protocol.DEFAULT_TIMEOUT, redisPassword);
+            unifiedJedis = new JedisPooled(poolConfig, host, port, Protocol.DEFAULT_TIMEOUT, redisPassword);
         } else {
-            jedisPooled = new JedisPooled(poolConfig, host , port);
+            unifiedJedis = new JedisPooled(poolConfig, host , port);
         }
-        return jedisPooled;
+        return unifiedJedis;
     }
 
     /**
@@ -299,21 +299,16 @@ public class RediSearchService {
             Map<String, ConnectionPool> clusterNodes = cluster_client.getClusterNodes();
             Collection<ConnectionPool> values = clusterNodes.values();
             values.forEach(jedisPool -> {
-                Connection connection = jedisPool.getResource();
-                String string_connect = connection.toString();
-                log.info ("a connection is " + string_connect);
-                String connectString = string_connect.replaceAll("[^\\d.:]", "");
-                log.info("connectString is " + connectString);
-                String[] connectArray = connectString.split(":");
-                JedisPooled jedisPooled = jedis_connection(connectArray[0], Integer.parseInt(connectArray[1]));
-                tryIndex(jedisPooled, indexRule, schema);
+                try (UnifiedJedis jedis = new UnifiedJedis(jedisPool.getResource())) {
+                    tryIndex(jedis, indexRule, schema);
+                }
             });
         } else {
             tryIndex(client, indexRule, schema);
         }
     }
-    public void tryIndex(JedisPooled jedis_client, IndexDefinition indexRule, Schema schema) {
-        log.info("rebuilding index on " + jedis_client.getPool().getResource().toString());
+    public void tryIndex(UnifiedJedis jedis_client, IndexDefinition indexRule, Schema schema) {
+        log.info("rebuilding index on ");
         try {
             jedis_client.ftCreate(indexName, IndexOptions.defaultOptions().setDefinition(indexRule), schema);
         } catch (Exception e) {
