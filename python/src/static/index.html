@@ -61,9 +61,10 @@ $('#input.typeahead').typeahead({
             }).then(function(data) {
                 $("#tickers").empty()
                 for (var ticker of data) {
+                    var string_date=(ticker.date).toString()
                     card='<div class="card m-1 p-1" style="width: 18rem;">'
                     card=card+'<div class="card-header">'
-                      card=card+'<h3 class="card-title">'+(ticker.date).substring(0,4)+"-"+(ticker.date).substring(4,6)+"-"+(ticker.date).substring(6)+'</h3>'
+                      card=card+'<h3 class="card-title">'+(string_date).substring(0,4)+"-"+(string_date).substring(4,6)+"-"+(string_date).substring(6)+'</h3>'
                     card=card+'</div>'
                     card=card+'<div class="card-footer">'
                         card=card+'<p class="card-text align-bottom"><strong>open:</strong> $'+number_format(ticker.open, 2, '.', ',' )+' <strong>close:</strong> $'+number_format(ticker.close, 2, '.', ',' )+'</p>'

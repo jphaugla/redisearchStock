@@ -2,10 +2,6 @@
 
 import csv
 import time
-# import shlex, subprocess
-
-import redis
-from redis.commands.json.path import Path
 import sys
 import re
 import datetime
@@ -14,8 +10,11 @@ import os.path
 from multiprocessing import Pool
 
 from Ticker import Ticker
+from RedisClient import RedisClient
 
 maxInt = sys.maxsize
+
+conn = RedisClient()
 
 
 def main():
@@ -56,15 +55,6 @@ def process_file(file_name):
     not_recent_dates = set()
     do_load = True
 
-    redis_server = environ.get('REDIS_HOST', 'localhost')
-    redis_port = int(environ.get('REDIS_PORT', '6379'))
-    redis_password = environ.get('REDIS_PASSWORD', "")
-
-    if redis_password is not None:
-        conn = redis.Redis(redis_server, redis_port, password=redis_password,
-                           decode_responses=True)
-    else:
-        conn = redis.Redis(redis_server, redis_port, decode_responses=True)
     # print("starting process_file with file name " + file_name + " contains text is " + str(contains_txt))
     if contains_txt == -1:
         print("skipping unkown file type " + file_name)
@@ -86,7 +76,7 @@ def process_file(file_name):
         short_file_name = os.path.basename(file_name)
         directory_name = os.path.dirname(file_name)
         # print("directory name is " + directory_name)
-        market_identifier = directory_name.replace("/data/daily/", "")
+        market_identifier = directory_name.replace("/data/daily/", "").replace("data/daily/", "").replace("daily", "")
         # print(market_identifier)
         final_market = re.sub('\d', "", market_identifier).replace('/', " ").upper()
         # print("final market  ", final_market)
@@ -111,16 +101,12 @@ def process_file(file_name):
             # clear any recent days
             if process_recents == "true":
                 for date in not_recent_dates:
-                    if conn.exists(nextTicker.TICKER_PREFIX + nextTicker.ticker + ':' + str(date)):
-                        conn.hset(nextTicker.TICKER_PREFIX + nextTicker.ticker + ':' + str(date), 'mostrecent', 'false')
+                    conn.update_most_recent(nextTicker, date)
             if do_load:
                 ticker_loaded += 1
-                if environ.get('WRITE_JSON') is not None and environ.get('WRITE_JSON') == "true":
-                    conn.json().set(nextTicker.get_key(), Path.root_path(), nextTicker.__dict__)
-                else:
-                    conn.hset(nextTicker.get_key(), mapping=nextTicker.__dict__)
+                conn.write_ticker(nextTicker)
                 # this write is for debug to know what line failed on
-            conn.set("ticker_highest_idx" + short_file_name, ticker_idx)
+            conn.update_load_tracker(short_file_name, ticker_idx)
 
             if ticker_idx % 50000 == 0:
                 print(str(ticker_idx) + " rows from file " + short_file_name + " loaded to redis " + str(ticker_loaded))
@@ -128,9 +114,7 @@ def process_file(file_name):
         csv_file.close()
         # print(str(ticker_idx) + " rows from file " + short_file_name + " loaded to redis " + str(ticker_loaded))
         # print("rows added from start " + start_time + " ended at " + str(datetime.datetime.now()))
-        conn.hset("ticker_load", short_file_name, "start:" + start_time + ":finished:" + str(datetime.datetime.now())
-                  + ":rows_in_file:" + str(ticker_idx) + ":rows_loaded:" + str(ticker_loaded))
-        conn.close()
+        conn.update_process_tracker(short_file_name, start_time, datetime, ticker_idx, ticker_loaded)
 
 def process_files_parallel(dirname, names, num_processes: int):
     # Process each file in parallel via Poll.map()
