@@ -8,7 +8,6 @@ from os import environ
 
 from flask import json
 
-
 from Ticker import Ticker
 
 
@@ -31,25 +30,40 @@ class RedisClient:
             return
 
     def write_ticker(self, ticker):
+        return_val = 0
         if self.write_json == "true":
-            self.write_json_ticker(ticker)
+            return_val = self.write_json_ticker(ticker)
         else:
-            self.write_hash_ticker(ticker)
+            return_val = self.write_hash_ticker(ticker)
+        return return_val
+
+    def get_ticker(self, ticker_key):
+        if self.write_json == "true":
+            return_data = self.conn.json().get(ticker_key)
+        else:
+            return_data = self.conn.hgetall(ticker_key)
+        return return_data
 
     def write_json_ticker(self, ticker):
-        self.conn.json().set(ticker.get_key(), Path.root_path(),
+        return self.conn.json().set(ticker.get_key(), Path.root_path(),
                              ticker.__dict__)
 
+    def delete_key(self, path):
+        return self.conn.delete(path)
+
+    def set_field(self, key, field, value):
+        if self.conn.exists(key):
+            if self.write_json == "true":
+                self.conn.json().set(key, field, value)
+            else:
+                self.hset(key, field, value)
+
     def write_hash_ticker(self, ticker):
-        self.conn.hset(ticker.get_key(), mapping=ticker.__dict__)
+        return self.conn.hset(ticker.get_key(), mapping=ticker.__dict__)
 
     def update_most_recent(self, ticker, in_date):
-        if self.conn.exists(ticker.TICKER_PREFIX + ticker.ticker + ':' + str(in_date)):
-            ticker_key = ticker.TICKER_PREFIX + ticker.ticker + ':' + str(in_date)
-            if self.write_json == "true":
-                self.conn.json().set(ticker_key, 'mostrecent', "false")
-            else:
-                self.hset(ticker_key, 'mostrecent', 'false')
+        ticker_key = ticker.TICKER_PREFIX + ticker.ticker + ':' + str(in_date)
+        self.set_field(ticker_key, "mostrecent", "false")
 
     def update_load_tracker(self, short_file_name, ticker_idx):
         self.conn.set("ticker_highest_idx" + short_file_name, ticker_idx)
@@ -92,7 +106,7 @@ class RedisClient:
 
         # no longer filtering the index on MostRecent just selecting on it
         # TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType, score_field='Score', filter="@MostRecent=='true'")
-        TickerDefinition = IndexDefinition(prefix=['ticker:'], index_type=useIndexType)
+        TickerDefinition = IndexDefinition(prefix=[Ticker.TICKER_PREFIX], index_type=useIndexType)
         TickerSCHEMA = (
             TextField(fieldPrefix + "ticker", as_name='ticker', no_stem=True),
             TextField(fieldPrefix + "tickershort", as_name='tickershort', no_stem=True),

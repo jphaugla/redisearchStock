@@ -22,20 +22,10 @@ def home(path):
     return_string = ""
     print("the request method is " + request.method + " path is " + path)
 
-    if request.method == 'PUT':
-        print('in PUT')
-        event = request.json
-        print('event is %s ' % event)
-        nextTicker = Ticker(**event)
-        nextTicker.set_key()
-        # event['updated'] = int(time.time())
-        # db.hmset(path, event)
-        db.write_ticker(nextTicker)
-        return_string = jsonify(nextTicker.__dict__, 201)
-
-    elif request.method == 'DELETE':
-        return_status = db.delete(path)
-        print("delete with path = " + path + " and status of " + str(return_status))
+    if request.method == 'DELETE':
+        print("delete with path = " + path )
+        return_status = db.delete_key(path)
+        print("status of " + str(return_status))
         return_string = jsonify(str(return_status), 201)
 
     elif request.method == 'GET':
@@ -97,8 +87,12 @@ def home(path):
         elif path == 'index':
             db.recreate_index()
             return_string = "Done"
+        elif path == 'key':
+            get_key = request.args.get("keyValue")
+            return_status = db.get_ticker(get_key)
+            return_string = jsonify(str(return_status), 201)
         else:
-            print("in the GET before call to index.html")
+            print("in the GET before call to index.htm with path ")
             response = app.send_static_file('index.html')
             response.headers['Content-Type'] = 'text/html'
             return_string = response
@@ -108,6 +102,21 @@ def home(path):
             print("loading files with this directory " + get_directory)
             TickerImport.load_directory(get_directory)
             return_string = "Done"
+        else:
+            return_status = 0
+            print('in POST')
+            event = request.json
+            print('event is %s ' % event)
+            nextTicker = Ticker(**event)
+            return_status = db.write_ticker(nextTicker)
+            return_string = jsonify(str(return_status), 201)
+    elif request.method == "PUT":
+        get_field = request.args.get("field")
+        get_value = request.args.get("value")
+        get_key = request.args.get("key")
+        print("setting on key = " + get_key + " field = " + get_field + " with value of " + str(get_value))
+        db.set_field(get_key, get_field, get_value)
+
     return return_string
 
 
