@@ -91,6 +91,12 @@ def home(path):
             get_key = request.args.get("keyValue")
             return_status = db.get_ticker(get_key)
             return_string = jsonify(str(return_status), 201)
+        elif path == 'field':
+            get_key = request.args.get("keyValue")
+            get_field = request.args.get("field")
+            print("get field key is " + get_key + " field is " + get_field, flush=True)
+            return_status = db.get_ticker_field(get_key, get_field)
+            return_string = jsonify(str(return_status), 201)
         else:
             print("in the GET before call to index.htm with path ")
             response = app.send_static_file('index.html')

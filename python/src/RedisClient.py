@@ -44,6 +44,14 @@ class RedisClient:
             return_data = self.conn.hgetall(ticker_key)
         return return_data
 
+    def get_ticker_field(self, ticker_key, field):
+        return_data = ""
+        if self.write_json == "true":
+            return_data = self.conn.json().get(ticker_key, field)
+        else:
+            return_data = self.conn.hgetall(ticker_key, field)
+        return return_data
+
     def write_json_ticker(self, ticker):
         return self.conn.json().set(ticker.get_key(), Path.root_path(),
                              ticker.__dict__)
