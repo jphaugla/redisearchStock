@@ -52,4 +52,7 @@ public class Ticker implements Serializable {
         // log.info("after split with parts " + parts[0]);
         return parts;
     }
+    public static String getPrefix() {
+        return Prefix;
+    }
 }

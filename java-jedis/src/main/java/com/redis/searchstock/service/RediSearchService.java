@@ -2,6 +2,9 @@ package com.redis.searchstock.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.gson.Gson;
+
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.redis.searchstock.domain.Ticker;
@@ -49,15 +52,18 @@ public class RediSearchService {
 
     IndexDefinition.Type indexType = IndexDefinition.Type.HASH;
     String fieldPrefix = "";
-    UnifiedJedis client;
+    JedisPooled client;
     JedisCluster cluster_client;
+    private static final Gson gson = new Gson();
+
 
     private static final String Prefix="ticker:";
 
     String indexName = "idx:movie"; // default name
     String redisHost = "localhost"; // default name
     int redisPort = 6379;
-    String redisPassword = "jasonrocks";
+    String redisPassword = "";
+    String writeJson = "false";
 
     ObjectMapper mapper = new ObjectMapper();
     int min_load_date;
@@ -67,23 +73,49 @@ public class RediSearchService {
     private void init() throws URISyntaxException {
         log.info("Init RediSearchService");
         redisHost = env.getProperty("redis.host", "localhost");
+        writeJson = env.getProperty("write_json", "false");
         redisPort = Integer.parseInt(env.getProperty("redis.port", "6379"));
-        client = jedis_connection(redisHost, redisPort);
         indexName = env.getProperty("redis.index", "Ticker");
+        redisPassword = env.getProperty("spring.redis.password", "");
+        log.info("redisPassword is " + redisPassword);
+        client = jedis_pooled_connection();
 
         if(env.getProperty("redis.oss").equals("true")) {
             //  set up a redis cluster to get the topology to create the index on each shard
             HostAndPort hostAndPort = new HostAndPort(redisHost, redisPort);
-            if(env.getProperty("spring.redis.password") != null && !env.getProperty("spring.redis.password").isEmpty()) {
-                String redisPassword = env.getProperty("spring.redis.password");
+            log.info("redisPassword is " + redisPassword + "empty is " + redisPassword.isEmpty());
+            if(redisPassword != null && !(redisPassword.isEmpty())) {
                 log.info("before cluster create " + redisPassword);
-                cluster_client = new JedisCluster(hostAndPort, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT, 10, redisPassword, new ConnectionPoolConfig());
+                cluster_client = new JedisCluster(hostAndPort, Protocol.DEFAULT_TIMEOUT, Protocol.DEFAULT_TIMEOUT,
+                        10, redisPassword, new ConnectionPoolConfig());
             } else {
-                cluster_client = new JedisCluster(hostAndPort, Protocol.DEFAULT_TIMEOUT, 10, new ConnectionPoolConfig());
+                cluster_client = new JedisCluster(hostAndPort, Protocol.DEFAULT_TIMEOUT, 10,
+                        new ConnectionPoolConfig());
             }
 
         }
 
+    }
+
+    private JedisPooled jedis_pooled_connection() {
+        // Get the configuration from the application properties/environment
+        JedisPooled jedisPooled;
+
+        ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
+        poolConfig.setMaxIdle(50);
+        poolConfig.setMaxTotal(50);
+        HostAndPort hostAndPort = new HostAndPort(redisHost, redisPort);
+
+        log.info("Configuration Index: " + indexName + " Host: " + redisHost + " Port " + String.valueOf(redisPort));
+        if (redisPassword != null && !(redisPassword.isEmpty())) {
+            String redisURL = "redis://:" + redisPassword + '@' + redisHost + ':' + String.valueOf(redisPort);
+            log.info("redisURL is " + redisURL);
+            jedisPooled = new JedisPooled(redisURL);
+        } else {
+            log.info(" no password");
+            jedisPooled = new JedisPooled(hostAndPort);
+        }
+        return jedisPooled;
     }
 
     private UnifiedJedis jedis_connection(String host, Integer port) {
@@ -176,6 +208,7 @@ public class RediSearchService {
 
         returnValue.put("docs", docsToReturn);
  */
+        log.info(String.valueOf(queryResult));
         return queryResult;
     }
 
@@ -238,7 +271,7 @@ public class RediSearchService {
         return "OK";
     }
     public String loadOneFile(File inFile) throws IOException {
-
+        String return_val = "";
             // create csv bean reader
         try (Reader reader = new BufferedReader(new FileReader(inFile))) {
             CsvToBean<Ticker> csvToBean = new CsvToBeanBuilder(reader)
@@ -260,7 +293,6 @@ public class RediSearchService {
             for(Ticker ticker : tickerList) {
                 // log.info("in ticker loop");
                 // log.info(ticker.getTicker());
-                // stringRedisTemplate.opsForValue().set("beforeCreateTicker", "now");
                 ticker.setExchange(final_exchange);
                 if(ticker.getDate() >= min_load_date) {
                     if(ticker.getDate() >= current_load_date){
@@ -268,27 +300,42 @@ public class RediSearchService {
                     } else {
                         ticker.setMostrecent("false");
                     }
-                    String returnVal = tickerRepository.create(ticker);
-                    // stringRedisTemplate.opsForValue().set("afterCreateTicker", "now");
+
+                    if(writeJson.equals("true")) {
+                        return_val = createJSONTicker(ticker);
+                        // log.info("createJSONTicker returnval " + return_val);
+                    } else {
+                        return_val = tickerRepository.create(ticker);
+                    }
                 }
             }
 
         } catch (Exception ex) {
             log.info("error");
         }
-        return "ok";
+        return return_val;
     }
 
+    public String createJSONTicker(Ticker ticker) throws JsonProcessingException {
+        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        // String json = ow.writeValueAsString(ticker);
+        String json = gson.toJson(ticker);
+        // log.info("json is " + json);
+        // log.info("id is " + ticker.createID());
+        String return_val = client.jsonSet(ticker.createID(), redis.clients.jedis.json.Path2.ROOT_PATH, json);
+        // log.info("return_val in createJSONTicker is " + return_val);
+        return return_val;
+    }
 
     public void createIndex() {
-        if (env.getProperty("write_json", "false") == "true") {
+        if (writeJson.equals("true")) {
             indexType = IndexDefinition.Type.JSON;
             fieldPrefix = "$.";
         } else {
             indexType = IndexDefinition.Type.HASH;
             fieldPrefix = "";
         }
-        IndexDefinition indexRule = new IndexDefinition(indexType).setPrefixes(new String[]{"ticker:"});
+        IndexDefinition indexRule = new IndexDefinition(indexType).setPrefixes(new String[]{Ticker.getPrefix()});
         Schema schema = new Schema()
                 .addField(new Schema.TextField(FieldName.of(fieldPrefix + "ticker").as("ticker")))
                 .addField(new Schema.TextField(FieldName.of(fieldPrefix + "tickershort").as("tickershort")))
