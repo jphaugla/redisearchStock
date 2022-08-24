@@ -49,7 +49,7 @@ class RedisClient:
         if self.write_json == "true":
             return_data = self.conn.json().get(ticker_key, field)
         else:
-            return_data = self.conn.hgetall(ticker_key, field)
+            return_data = self.conn.hget(ticker_key, field)
         return return_data
 
     def write_json_ticker(self, ticker):
@@ -64,7 +64,7 @@ class RedisClient:
             if self.write_json == "true":
                 self.conn.json().set(key, field, value)
             else:
-                self.hset(key, field, value)
+                self.conn.hset(key, field, value)
 
     def write_hash_ticker(self, ticker):
         return self.conn.hset(ticker.get_key(), mapping=ticker.__dict__)
