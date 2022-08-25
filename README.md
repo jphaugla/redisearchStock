@@ -77,8 +77,10 @@ environment variable at scripts/app.env.
 | REDIS_HOST           | redis           | The name of the redis docker container                                                               |
 | REDIS_PASSWORD       | <none>          | Redis Password                                                                                       |
 | REDIS_PORT           | 6379            | redis port                                                                                           |     
+| REDIS_INDEX          | Ticker          | redis port                                                                                           |     
 | PROCESSES            | 6               | On larger machines, increases this will increase load speed                                          |
 | WRITE_JSON           | false           | flag to use JSON instead of Hash structures                                                          |
+| PIPELINE             | true            | flag to use pipeline for each of the ticker files                                                    |
 | OLDEST_VALUE         | 20220101        | Skip any records older than this date                                                                |   
 | CURRENT_VALUE        | 20220414        |  Use this as current value.  This also sets mostrecent flag                                          |
 | PROCESS_RECENTS      | false           | will set most recent flag for specified keys back to false (requires creation of specific redis set) |
