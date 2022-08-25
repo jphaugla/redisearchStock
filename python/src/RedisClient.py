@@ -30,7 +30,7 @@ class RedisClient:
             return
 
     def start_pipeline(self):
-        pipeline = self.conn.pipeline()
+        pipeline = self.conn.pipeline(transaction=False)
         return pipeline
 
     def execute_pipeline(self, pipeline):
