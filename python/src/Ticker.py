@@ -1,5 +1,5 @@
 class Ticker(object):
-    TICKER_PREFIX = "$ticker:"
+    TICKER_PREFIX = "ticker:"
 
     def __init__(self):
         self.geography = ""

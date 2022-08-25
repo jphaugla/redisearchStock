@@ -15,7 +15,10 @@ from RedisClient import RedisClient
 maxInt = sys.maxsize
 
 conn = RedisClient()
-
+redis_pipelining = environ.get('PIPELINE', "false")
+process_recent = environ.get('PROCESS_RECENTS', "false")
+min_load_date = int(environ.get('OLDEST_VALUE'))
+current_load_date = int(environ.get('CURRENT_VALUE'))
 
 def main():
     # global redis_pool
@@ -51,7 +54,6 @@ def load_directory(ticker_file_location):
 def process_file(file_name):
     contains_txt = file_name.find("txt")
     process_dates = "false"
-    process_recents = "false"
     not_recent_dates = set()
     do_load = True
 
@@ -59,16 +61,14 @@ def process_file(file_name):
     if contains_txt == -1:
         print("skipping unkown file type " + file_name)
         return
-    min_load_date = int(environ.get('OLDEST_VALUE'))
-    current_load_date = int(environ.get('CURRENT_VALUE'))
 
-    if environ.get('PROCESS_RECENTS') is not None:
-        not_recent_dates = conn.smembers('remove_current')
-        process_recents = environ.get('PROCESS_RECENTS')
+    if process_recent == "true":
+        not_recent_dates = conn.read_smembers('remove_current')
 
     with open(file_name, mode="r", encoding='utf-8') as csv_file:
         # file is tab delimited
         csv_reader = csv.DictReader(csv_file, delimiter=',', quoting=csv.QUOTE_NONE)
+        pipeline = ""
         ticker_idx = 0
         ticker_loaded = 0
         #  go through all rows in the file
@@ -78,8 +78,11 @@ def process_file(file_name):
         # print("directory name is " + directory_name)
         market_identifier = directory_name.replace("/data/daily/", "").replace("data/daily/", "").replace("daily", "")
         # print(market_identifier)
-        final_market = re.sub('\d', "", market_identifier).replace('/', " ").upper()
+        final_market = re.sub('\d', "", market_identifier).replace('/', " ").upper().strip()
         # print("final market  ", final_market)
+        if redis_pipelining == "true":
+            # print("starting pipelining")
+            pipeline = conn.start_pipeline()
 
         for row in csv_reader:
             #  increment ticker_idx and use as incremental part of the key
@@ -99,19 +102,28 @@ def process_file(file_name):
                     # print("do_load should be false and not loading ticker date " + nextTicker.Date + " with min load date " + str(min_load_date))
 
             # clear any recent days
-            if process_recents == "true":
+            if process_recent == "true":
                 for date in not_recent_dates:
                     conn.update_most_recent(nextTicker, date)
             if do_load:
                 ticker_loaded += 1
-                conn.write_ticker(nextTicker)
+                if redis_pipelining == "true":
+                    conn.write_ticker_pipeline(nextTicker, pipeline)
+                else:
+                    conn.write_ticker(nextTicker)
                 # this write is for debug to know what line failed on
-            conn.update_load_tracker(short_file_name, ticker_idx)
+            if redis_pipelining == "true":
+                conn.update_load_tracker_pipeline(short_file_name, ticker_idx, pipeline)
+            else:
+                conn.update_load_tracker(short_file_name, ticker_idx)
+
 
             if ticker_idx % 50000 == 0:
                 print(str(ticker_idx) + " rows from file " + short_file_name + " loaded to redis " + str(ticker_loaded))
                 print("rows added from start " + start_time + " ended at " + str(datetime.datetime.now()))
         csv_file.close()
+        if redis_pipelining == "true":
+            conn.execute_pipeline(pipeline)
         # print(str(ticker_idx) + " rows from file " + short_file_name + " loaded to redis " + str(ticker_loaded))
         # print("rows added from start " + start_time + " ended at " + str(datetime.datetime.now()))
         conn.update_process_tracker(short_file_name, start_time, datetime, ticker_idx, ticker_loaded)

@@ -29,6 +29,26 @@ class RedisClient:
             print(f'Redis failed connection to {self.redis_server}:{self.redis_port}.')
             return
 
+    def start_pipeline(self):
+        pipeline = self.conn.pipeline()
+        return pipeline
+
+    def execute_pipeline(self, pipeline):
+        results = pipeline.execute()
+        return results
+
+    def read_smembers(self, key):
+        return_members = self.conn.smembers(key)
+        return return_members
+
+    def write_ticker_pipeline(self, ticker, pipeline):
+        return_val = 0
+        if self.write_json == "true":
+            return_val = self.write_json_ticker_pipeline(ticker, pipeline)
+        else:
+            return_val = self.write_hash_ticker_pipeline(ticker, pipeline)
+        return return_val
+
     def write_ticker(self, ticker):
         return_val = 0
         if self.write_json == "true":
@@ -56,6 +76,10 @@ class RedisClient:
         return self.conn.json().set(ticker.get_key(), Path.root_path(),
                              ticker.__dict__)
 
+    def write_json_ticker_pipeline(self, ticker, pipeline):
+        return pipeline.json().set(ticker.get_key(), Path.root_path(),
+                             ticker.__dict__)
+
     def delete_key(self, path):
         return self.conn.delete(path)
 
@@ -66,6 +90,9 @@ class RedisClient:
             else:
                 self.conn.hset(key, field, value)
 
+    def write_hash_ticker_pipeline(self, ticker, pipeline):
+        return pipeline.hset(ticker.get_key(), mapping=ticker.__dict__)
+
     def write_hash_ticker(self, ticker):
         return self.conn.hset(ticker.get_key(), mapping=ticker.__dict__)
 
@@ -74,7 +101,10 @@ class RedisClient:
         self.set_field(ticker_key, "mostrecent", "false")
 
     def update_load_tracker(self, short_file_name, ticker_idx):
-        self.conn.set("ticker_highest_idx" + short_file_name, ticker_idx)
+        self.conn.set("ticker_highest_idx:" + short_file_name, ticker_idx)
+
+    def update_load_tracker_pipeline(self, short_file_name, ticker_idx, pipeline):
+        pipeline.set("ticker_highest_idx:" + short_file_name, ticker_idx)
 
     def update_process_tracker(self, short_file_name, start_time, datetime, ticker_idx, ticker_loaded):
         self.conn.hset("ticker_load", short_file_name, "start:" + start_time + ":finished:" + str(datetime.datetime.now())

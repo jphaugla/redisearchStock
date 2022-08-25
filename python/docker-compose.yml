@@ -35,6 +35,7 @@ services:
       - OLDEST_VALUE=20220301
       - CURRENT_VALUE=20220414
       - REDIS_INDEX=Ticker
+      - PIPELINE=true
     build:
       context: .
       dockerfile: Dockerfile-flask
