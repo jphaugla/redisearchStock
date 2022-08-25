@@ -1,9 +1,5 @@
 package com.redis.searchstock.service;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
-
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -12,8 +8,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.redis.searchstock.service.RediSearchService;
 
 import static java.nio.file.FileVisitResult.CONTINUE;
 

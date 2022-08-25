@@ -11,7 +11,6 @@ import com.redis.searchstock.domain.Ticker;
 import com.redis.searchstock.domain.TickerCharacter;
 import jakarta.annotation.PostConstruct;
 
-import org.json.JSONArray;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.*;
 
@@ -286,7 +285,7 @@ public class RediSearchService {
             // log.info("dir name " + directory_name);
             String market_identifier = directory_name.replace("/data","").replace("/daily","")
                     .replace("data","").replace("daily","");
-            String final_exchange = market_identifier.replaceAll("[0-9]+", "").replace("/", " ").toUpperCase();
+            String final_exchange = market_identifier.replaceAll("[0-9]+", "").replace("/", " ").toUpperCase().trim();
             // log.info(final_exchange);
             // convert `CsvToBean` object to list of ticker
             List<Ticker> tickerList = csvToBean.parse();
@@ -318,6 +317,9 @@ public class RediSearchService {
 
     public String createJSONTicker(Ticker ticker) throws JsonProcessingException {
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        String[] parts = ticker.createTickerShortGeography();
+        ticker.setTickershort(parts[0]);
+        ticker.setGeography(parts[1]);
         // String json = ow.writeValueAsString(ticker);
         String json = gson.toJson(ticker);
         // log.info("json is " + json);
