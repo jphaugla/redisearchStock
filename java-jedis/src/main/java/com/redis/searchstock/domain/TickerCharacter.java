@@ -1,5 +1,6 @@
 package com.redis.searchstock.domain;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,7 +13,7 @@ import java.util.regex.Pattern;
 @NoArgsConstructor
 @Getter
 @Setter
-
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class TickerCharacter implements Serializable {
     // <TICKER>,<PER>,<DATE>,<TIME>,<OPEN>,<HIGH>,<LOW>,<CLOSE>,<VOL>,<OPENINT>
     private static final String Prefix="ticker:";

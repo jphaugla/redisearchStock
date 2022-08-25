@@ -11,6 +11,7 @@ import com.redis.searchstock.domain.Ticker;
 import com.redis.searchstock.domain.TickerCharacter;
 import jakarta.annotation.PostConstruct;
 
+import org.json.JSONArray;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.*;
 
@@ -208,7 +209,6 @@ public class RediSearchService {
 
         returnValue.put("docs", docsToReturn);
  */
-        log.info(String.valueOf(queryResult));
         return queryResult;
     }
 
@@ -365,7 +365,7 @@ public class RediSearchService {
 
     }
 
-    public String convertResults(SearchResult searchResult) throws JsonProcessingException {
+    public String convertHashResults(SearchResult searchResult) throws JsonProcessingException {
         List<Document> docs = searchResult.getDocuments();
         ArrayList<TickerCharacter> tickerList = new ArrayList<TickerCharacter>();
         for ( Document oneDoc : docs) {
@@ -375,6 +375,7 @@ public class RediSearchService {
             for (Map.Entry<String, Object> oneProp : properties) {
                 String key = oneProp.getKey();
                 String value = oneProp.getValue().toString();
+                log.info("in properties key " + key + " value " + value);
                 if (key.equals("ticker")) {
                     tickerRec.setTicker(value);
                     String[] parts = tickerRec.createTickerShortGeography();
@@ -412,5 +413,53 @@ public class RediSearchService {
         String jsonList = mapper.writeValueAsString(tickerList);
         log.info(jsonList);
         return (jsonList);
+    }
+    public String convertJSONResults(SearchResult searchResult) throws JsonProcessingException {
+        List<Document> docs = searchResult.getDocuments();
+        String jsonArray = "[";
+
+        for ( Document oneDoc : docs) {
+            log.info("oneDoc ");
+            // log.info(oneDoc.toString());
+            Iterable<Map.Entry<String, Object>> properties = oneDoc.getProperties();
+            log.info("logproperties");
+            log.info(properties.toString());
+            for (Map.Entry<String, Object> oneProp : properties) {
+                String key = oneProp.getKey();
+                String value = oneProp.getValue().toString();
+                log.info("in properties key " + key + " value " + value);
+                if (key.equals("$")) {
+                    TickerCharacter ticker = mapper.readValue(value, TickerCharacter.class);
+                    String[] parts = ticker.createTickerShortGeography();
+                    ticker.setTickershort(parts[0]);
+                    ticker.setGeography(parts[1]);
+                    String prettyTicker = mapper.writeValueAsString(ticker);
+                    log.info("prettyTicker");
+                    log.info(prettyTicker);
+                    jsonArray = jsonArray + prettyTicker + ",";
+                }
+                // log.info(String.valueOf(oneProp));
+                // log.info("value is " + value);
+                //  log.info("key is " + key );
+            }
+
+        }
+        // remove the last comman and then add end of array character
+        if(jsonArray.length()>0) {
+            jsonArray = jsonArray.substring(0, (jsonArray.length() - 1)) + "]";
+        }
+        log.info("jsonarry tostring");
+        log.info(jsonArray.toString());
+        return (jsonArray.toString());
+    }
+
+    public String convertResults(SearchResult searchResult) throws JsonProcessingException {
+        String returnValue = "";
+        if(writeJson.equals("true")) {
+            returnValue = convertJSONResults(searchResult);
+        } else {
+            returnValue = convertHashResults(searchResult);
+        }
+        return returnValue;
     }
 }
