@@ -78,9 +78,9 @@ environment variable at scripts/app.env.
 | REDIS_PASSWORD       | <none>          | Redis Password                                                                                       |
 | REDIS_PORT           | 6379            | redis port                                                                                           |     
 | REDIS_INDEX          | Ticker          | redis port                                                                                           |     
-| PROCESSES            | 6               | On larger machines, increases this will increase load speed                                          |
+| PROCESSES            | 6               | On larger machines, increasing this will increase load speed                                          |
 | WRITE_JSON           | false           | flag to use JSON instead of Hash structures                                                          |
-| PIPELINE             | true            | flag to use pipeline for each of the ticker files                                                    |
+| PIPELINE             | true            | flag to use pipeline for each of the ticker files (only works on python)                                                    |
 | OLDEST_VALUE         | 20220101        | Skip any records older than this date                                                                |   
 | CURRENT_VALUE        | 20220414        |  Use this as current value.  This also sets mostrecent flag                                          |
 | PROCESS_RECENTS      | false           | will set most recent flag for specified keys back to false (requires creation of specific redis set) |
@@ -329,6 +329,9 @@ These are a group of sample redis-cli queries to see
 ```bash
 redic-cli -f scripts/searchQueries.txt
 ```
+
+There are scripts in the scripts directory in addition to loadFile.sh and redoIndex.sh.  Check these out for additional API calls available such as adding a ticker, deleting a ticker, getting one ticker field, removing one ticker field, etc.
+
 ### Troubleshooting
 Moving the Stooq datafiles from apple (BSD) to Linux can cause an odd read errors in the loading file program
 delete all these erroneous files.  I have now added some code to ignore hidden files in python version of code.
