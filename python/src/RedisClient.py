@@ -83,6 +83,15 @@ class RedisClient:
     def delete_key(self, path):
         return self.conn.delete(path)
 
+    def deleteField(self, key_value, field_value):
+        if self.conn.exists(key_value):
+            return_val = 0
+            if self.write_json == "true":
+                return_val = self.conn.json().delete(key_value, field_value)
+            else:
+                return_val =self.conn.hdel(key_value, field_value)
+            return return_val
+
     def set_field(self, key, field, value):
         if self.conn.exists(key):
             if self.write_json == "true":
@@ -185,3 +194,5 @@ class RedisClient:
         # print("jsonpickle.encode")
 
         return ticker_results
+
+

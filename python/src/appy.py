@@ -23,14 +23,21 @@ def home(path):
     print("the request method is " + request.method + " path is " + path)
 
     if request.method == 'DELETE':
-        search_column = request.args.get("search_column")
-        print("delete with path = " + path, flush=True)
-        # remove ticker part of path
-        use_path = path.replace("ticker/", "")
-        print("use_path is ", use_path, flush=True)
-        return_status = db.delete_key(use_path)
-        print("status of " + str(return_status))
-        return_string = jsonify(str(return_status), 201)
+        if path == 'key':
+            key_to_delete = request.args.get("keyValue")
+            print("delete with keyValue = " + key_to_delete, flush=True)
+            return_status = db.delete_key(key_to_delete)
+            print("status of " + str(return_status))
+            return_string = jsonify(str(return_status), 201)
+        elif path == 'field':
+            key_value = request.args.get("keyValue")
+            field_value = request.args.get("fieldValue")
+            print("delete with keyValue = " + key_value + " fieldValue " + field_value, flush=True)
+            return_status = db.deleteField(key_value, field_value)
+            print("status of " + str(return_status))
+            return_string = jsonify(str(return_status), 201)
+        else:
+            print("unknown path of " + path, flush=True)
 
     elif request.method == 'GET':
         print("GET Method with path " + path)
