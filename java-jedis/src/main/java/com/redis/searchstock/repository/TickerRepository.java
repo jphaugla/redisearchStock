@@ -20,7 +20,7 @@ public class TickerRepository {
     private StringRedisTemplate stringRedisTemplate;
 
     ObjectMapper mapper = new ObjectMapper();
-    public String create (Ticker ticker) {
+    public  String create(Ticker ticker) {
         // log.info("in uploadCSVFile");
         String[] tickershort = ticker.createTickerShortGeography();
         // String tickershort = "AAA";

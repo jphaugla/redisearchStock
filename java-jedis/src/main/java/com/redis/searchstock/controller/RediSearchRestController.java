@@ -2,6 +2,7 @@ package com.redis.searchstock.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redis.searchstock.domain.Ticker;
 import com.redis.searchstock.service.RediSearchService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -54,6 +55,7 @@ public class RediSearchRestController implements WebMvcConfigurer {
 
         return returnList;
     }
+
     // this is returning all the rows for the one ticker in the box;
     @GetMapping("/oneticker/")
     public String oneTicker(
@@ -65,15 +67,25 @@ public class RediSearchRestController implements WebMvcConfigurer {
         return returnList;
     }
 
+    @GetMapping("/key")
+    public Ticker getKey(
+            @RequestParam(name="keyValue")String keyValue){
+        return rediSearchService.getKey(keyValue);
+    }
+
+    @GetMapping("/field")
+    public String getField(
+            @RequestParam(name="keyValue")String keyValue,
+            @RequestParam(name="fieldValue")String fieldValue){
+        log.info("in controller getField");
+        return rediSearchService.getField(keyValue, fieldValue);
+    }
 
     @GetMapping("/index")
     public String index() {
-
         rediSearchService.createIndex();
-
         return "Done";
     }
-
 
     @PostMapping("/upload-csv-file")
     public String uploadCSVFile(@RequestParam("directory") String directory) throws IOException {
@@ -81,58 +93,28 @@ public class RediSearchRestController implements WebMvcConfigurer {
         return rediSearchService.loadStockFiles(directory);
     }
 
+    @PostMapping("/postTicker")
+    public String postTicker(@RequestBody Ticker ticker) throws IOException {
+        // log.info("in uploadCSVFile");
+        return rediSearchService.createTicker(ticker);
+    }
+
+    @PutMapping("/setfield")
+    public String setField(@RequestParam String key,
+                           @RequestParam String field,
+                           @RequestParam String value) {
+        return rediSearchService.setField(key, field, value);
+    }
 
     @GetMapping("/movies/group_by/{field}")
     public Map<String,Object> getMovieGroupBy(@PathVariable("field") String field) {
         return rediSearchService.getMovieGroupBy(field);
     }
 
-    @GetMapping("/movies/{movieId}")
-    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-    public Map<String, Object> getMOvieById(@PathVariable("movieId") String movieId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("messsage", "This movie endpoint is not implemented in Java, use the Node.js Endpoint");
-        return result;
-    };
+    @DeleteMapping("/ticker/{tickerKey}")
+    public String deleteTicker (@PathVariable String tickerKey) {
 
-    @PostMapping("/movies/{movieId}")
-    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-    public Map<String, Object> saveMovie(@PathVariable("movieId") String movieId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("messsage", "This movie endpoint is not implemented in Java, use the Node.js Endpoint");
-        return result;
-    };
-
-    @GetMapping("/movies/{movieId}/comments")
-    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-    public Map<String, Object> getMovieComments(@PathVariable("movieId") String movieId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("messsage", "Comment API not implemented in Java, use the Node.js Endpoint");
-        return result;
-    };
-
-    @PostMapping("/movies/{movieId}/comments")
-    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-    public Map<String, Object> createMovieComments(@PathVariable("movieId") String movieId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("messsage", "Comment API not implemented in Java, use the Node.js Endpoint");
-        return result;
-    };
-
-    @GetMapping("/comments/{commentId}")
-    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-    public Map<String, Object> getCommentById(@PathVariable("commentId") String commentId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("messsage", "Comment API not implemented in Java, use the Node.js Endpoint");
-        return result;
-    };
-
-    @DeleteMapping("/comments/{commentId}")
-    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
-    public Map<String, Object> deleteCommentById(@PathVariable("commentId") String commentId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("messsage", "Comment API not implemented in Java, use the Node.js Endpoint");
-        return result;
-    };
+        return rediSearchService.deleteTicker(tickerKey.replace("\\",""));
+    }
 
 }

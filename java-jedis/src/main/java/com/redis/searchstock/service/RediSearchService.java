@@ -11,9 +11,11 @@ import com.redis.searchstock.domain.Ticker;
 import com.redis.searchstock.domain.TickerCharacter;
 import jakarta.annotation.PostConstruct;
 
+import org.json.JSONArray;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.*;
 
+import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.*;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationBuilder;
@@ -299,18 +301,21 @@ public class RediSearchService {
                     } else {
                         ticker.setMostrecent("false");
                     }
-
-                    if(writeJson.equals("true")) {
-                        return_val = createJSONTicker(ticker);
-                        // log.info("createJSONTicker returnval " + return_val);
-                    } else {
-                        return_val = tickerRepository.create(ticker);
-                    }
+                    createTicker(ticker);
                 }
             }
 
         } catch (Exception ex) {
             log.info("error");
+        }
+        return return_val;
+    }
+    public String createTicker(Ticker ticker) throws JsonProcessingException {
+        String return_val = "";
+        if(writeJson.equals("true")) {
+            return_val = createJSONTicker(ticker);
+        } else {
+            return_val = tickerRepository.create(ticker);
         }
         return return_val;
     }
@@ -464,4 +469,76 @@ public class RediSearchService {
         }
         return returnValue;
     }
+
+    public Ticker getKey(String keyValue) {
+        Ticker returnTicker;
+        if(writeJson.equals("true")) {
+            returnTicker = getKeyJSON(keyValue);
+        } else {
+            returnTicker = getKeyHash(keyValue);
+        }
+        return returnTicker;
+    }
+
+    private Ticker getKeyJSON(String keyValue) {
+        Ticker returnTicker = client.jsonGet(keyValue, Ticker.class);
+        return returnTicker;
+    }
+
+    private Ticker getKeyHash(String keyValue) {
+        Map<Object, Object> tickerHash = stringRedisTemplate.opsForHash().entries(keyValue);
+        Ticker ticker = mapper.convertValue(tickerHash, Ticker.class);
+        return ticker;
+    }
+
+    public String getField(String keyValue, String fieldValue) {
+        log.info("in service getField key " + keyValue + " field " + fieldValue);
+        String returnValue;
+        if(writeJson.equals("true")) {
+            returnValue = getFieldJSON(keyValue, fieldValue);
+        } else {
+            returnValue = getFieldHash(keyValue, fieldValue);
+        }
+        return returnValue;
+    }
+    private String getFieldJSON(String keyValue, String fieldValue) {
+        Object result = client.jsonGet(keyValue, Path2.of(fieldValue));
+        String returnValue = result.toString();
+        return returnValue;
+    }
+
+    private String getFieldHash(String keyValue, String fieldValue) {
+        String returnValue = (String)stringRedisTemplate.opsForHash().get(keyValue, fieldValue);
+        return returnValue;
+    }
+
+    public String setField(String key, String field, String value) {
+        log.info("in service setField key " + key + " field " + field + " value " + value);
+        String returnValue;
+        if(writeJson.equals("true")) {
+            returnValue = setFieldJSON(key, field, value);
+        } else {
+            returnValue = setFieldHash(key, field, value);
+        }
+        return returnValue;
+    }
+
+    private String setFieldHash(String key, String field, String value) {
+        stringRedisTemplate.opsForHash().put(key, field, value);
+        return "Done\n";
+    }
+
+    private String setFieldJSON(String key, String field, String value) {
+        //  this replaces the object
+        //  Object result = client.jsonSet(key, Path2.ROOT_PATH, new JSONArray(new String[] {field + ':' + value}));
+        Object result = client.jsonSet(key, Path2.of(field), value);
+        String returnValue = result.toString();
+        return returnValue;
+    }
+
+    public String deleteTicker(String tickerKey) {
+        log.info("in service deleteTicker tickerkey " + tickerKey);
+        return  String.valueOf(stringRedisTemplate.delete(tickerKey));
+    }
+
 }
