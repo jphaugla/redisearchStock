@@ -23,8 +23,12 @@ def home(path):
     print("the request method is " + request.method + " path is " + path)
 
     if request.method == 'DELETE':
-        print("delete with path = " + path )
-        return_status = db.delete_key(path)
+        search_column = request.args.get("search_column")
+        print("delete with path = " + path, flush=True)
+        # remove ticker part of path
+        use_path = path.replace("ticker/", "")
+        print("use_path is ", use_path, flush=True)
+        return_status = db.delete_key(use_path)
         print("status of " + str(return_status))
         return_string = jsonify(str(return_status), 201)
 
@@ -70,7 +74,7 @@ def home(path):
             return_string = jsonify(str(return_status), 201)
         elif path == 'field':
             get_key = request.args.get("keyValue")
-            get_field = request.args.get("field")
+            get_field = request.args.get("fieldValue")
             print("get field key is " + get_key + " field is " + get_field, flush=True)
             return_status = db.get_ticker_field(get_key, get_field)
             return_string = jsonify(str(return_status), 201)
