@@ -18,3 +18,5 @@ data:
   PROCESS_RECENTS: "false"
   REDIS_INDEX: "ticker"
   REDIS_SERVER: redis-enterprise-database.demo
+  PIPELINE: "true"
+  REDIS_OSS: "false"

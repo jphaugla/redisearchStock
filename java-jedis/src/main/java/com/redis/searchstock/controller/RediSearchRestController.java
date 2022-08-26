@@ -111,10 +111,17 @@ public class RediSearchRestController implements WebMvcConfigurer {
         return rediSearchService.getMovieGroupBy(field);
     }
 
-    @DeleteMapping("/ticker/{tickerKey}")
-    public String deleteTicker (@PathVariable String tickerKey) {
+    @DeleteMapping("/key")
+    public String deleteTicker (@RequestParam String keyValue) {
 
-        return rediSearchService.deleteTicker(tickerKey.replace("\\",""));
+        return rediSearchService.deleteTicker(keyValue);
+    }
+
+    @DeleteMapping("/field")
+    public String deleteField(@RequestParam String keyValue,
+                              @RequestParam String fieldValue) {
+
+        return rediSearchService.deleteField(keyValue, fieldValue);
     }
 
 }

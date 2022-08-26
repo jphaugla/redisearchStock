@@ -501,6 +501,7 @@ public class RediSearchService {
         }
         return returnValue;
     }
+
     private String getFieldJSON(String keyValue, String fieldValue) {
         Object result = client.jsonGet(keyValue, Path2.of(fieldValue));
         String returnValue = result.toString();
@@ -541,4 +542,23 @@ public class RediSearchService {
         return  String.valueOf(stringRedisTemplate.delete(tickerKey));
     }
 
+    public String deleteField(String keyValue, String fieldValue) {
+        log.info("in service setField key " + keyValue + " field " + fieldValue );
+        String returnValue;
+        if(writeJson.equals("true")) {
+            returnValue = deleteFieldJSON(keyValue, fieldValue);
+        } else {
+            returnValue = deleteFieldHash(keyValue, fieldValue);
+        }
+        return returnValue;
+    }
+
+    private String deleteFieldHash(String keyValue, String fieldValue) {
+        return String.valueOf(stringRedisTemplate.opsForHash().delete(keyValue, fieldValue));
+    }
+
+    private String deleteFieldJSON(String keyValue, String fieldValue) {
+        Object result = client.jsonDel(keyValue, Path2.of(fieldValue));
+        return result.toString();
+    }
 }
