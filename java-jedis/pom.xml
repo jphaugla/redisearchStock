@@ -18,7 +18,7 @@
 		<java.version>17</java.version>
                 <start-class>com.redis.searchstock.RedisearchStocksRestApplication</start-class>
 		<version.jedis>4.3.0-m1</version.jedis>
-		<jackson.version>2.13.3</jackson.version>
+		<jackson.version>2.14.0-rc1</jackson.version>
 		<version.javax.inject>1</version.javax.inject>
 	</properties>
 
