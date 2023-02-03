@@ -6,6 +6,7 @@ The [main readme](../README.md) is up one level.
 - [Jedis and Spring version](https://stackoverflow.com/questions/72194259/is-it-possible-to-use-the-newest-jedis-in-spring-project)
 - [Spring pull request including Jedis 4.x](https://github.com/spring-projects/spring-data-redis/pull/2287)
 - [Spring 3.0 SNAPSHOT](https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/html/getting-started.html#getting-started.installing.java)
+- [GitHub deploying this java application with redis enterprise on AWS](https://github.com/jphaugla/tfmodule-aws-redis-enterprise)
 
 ## Running the application in Docker
 
@@ -43,13 +44,13 @@ docker stop jedis-stock
   * install java 
   * set java home
 ```bash
-sudo yum install java-18-openjdk
-export JAVA_HOME=/usr/lib/jvm/java-18-openjdk-18.0.1.0.10-2.rolling.el7.x86_64
+sudo yum install java-17-openjdk
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 ```
   * download and install maven following [these steps](https://linuxize.com/post/how-to-install-apache-maven-on-centos-7) - NOTE:  yum installs older version
-  * this worked with java 18
+  * this worked with java 17
 ```bash
-export JAVA_HOME=/usr/lib/jvm/java-18-openjdk-18.0.1.0.10-2.rolling.el7.x86_64
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 export M2_HOME=/opt/maven
 export MAVEN_HOME=/opt/maven
 export PATH=${M2_HOME}/bin:${PATH}
@@ -59,11 +60,9 @@ export PATH=${M2_HOME}/bin:${PATH}
 ```bash
 mkdir binaries
 cd binaries
-wget https://download.oracle.com/java/18/latest/jdk-18_linux-x64_bin.deb
-sudo apt install ./jdk-18_linux-x64_bin.deb
+apt install openjdk-18-jdk openjdk-18-jre
 cat <<EOF | sudo tee /etc/profile.d/jdk18.sh
-export JAVA_HOME=/usr/lib/jvm/jdk-18
-export PATH=\$PATH:\$JAVA_HOME/bin
+export JAVA_HOME=/usr/lib/jvm/java-18-openjdk-amd64
 EOF
 ```
   * download and install maven flollowing [these steps](https://phoenixnap.com/kb/install-maven-on-ubuntu)  Note:  apt-get installs older version
@@ -81,5 +80,5 @@ mvn clean package
 edit the [app.env](../scripts/app.env) appropriately for desires and environment
 ```bash
 source ../scripts/app.env
-./src/main/resources/runApplication.sh
+java -jar target/redisearch-0.0.1-SNAPSHOT.jar
 ```

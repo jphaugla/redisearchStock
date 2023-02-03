@@ -1,0 +1,57 @@
+JSON.SET doc $ '{"a":2}'
+JSON.SET doc $.a '3'
+JSON.GET doc $
+# without jsonpath
+JSON.SET doc a '6'
+JSON.GET doc $
+# now with dollar signs-all of these work
+# these also work with double quotes around the keyname and the path
+JSON.SET $doc $ '{"$a":2}'
+JSON.SET $doc .$a '3'
+JSON.SET $doc $.$a '5'
+JSON.GET $doc
+# without jsonpath doesn't work
+JSON.SET $doc $a '8'
+JSON.GET $doc $
+
+# not relevant
+JSON.SET doc $ '{"a":2}'
+JSON.SET doc $.b '8'
+JSON.GET doc $
+JSON.SET doc $ '{"f1": {"a":1}, "f2":{"a":2}}'
+JSON.SET doc $..a 3
+JSON.GET doc
+
+# works until marked
+JSON.SET employee_profile $ '{ "employee": { "name": "alpha", "age": 40,"married": true }  } '
+JSON.GET employee_profile employee
+JSON.SET $employee_profile $ '{ "employee": { "name": "alpha", "age": 40,"married": true }  } '
+JSON.GET $employee_profile employee
+
+JSON.SET $employee_profile $ '{ "$employee": { "name": "alpha", "age": 40,"married": true }  } '
+JSON.GET $employee_profile $employee
+(error) JSON Path error: path error: \n$employee\n^^^^^^^^^\n
+JSON.GET $employee_profile .$employee
+JSON.GET $employee_profile $.$employee
+
+#  redis 1.x
+JSON.SET doc . '{"a":2}'
+JSON.SET doc a '3'
+JSON.GET doc
+JSON.SET $doc . '{"a":2}'
+JSON.SET $doc a '3'
+JSON.GET $doc
+del doc
+JSON.SET doc . '{"$a":2}'
+JSON.SET doc $a '3'
+del $doc
+JSON.SET $doc . '{"$a":2}'
+JSON.SET $doc $a '3'
+JSON.GET $doc
+JSON.SET employee_profile . '{ "employee": { "name": "alpha", "age": 40,"married": true }  } '
+JSON.GET employee_profile employee
+del employee_profile
+JSON.SET employee_profile . '{ "$employee": { "name": "alpha", "age": 40,"married": true }  } '
+JSON.GET employee_profile $employee
+JSON.SET $employee_profile . '{ "$employee": { "name": "alpha", "age": 40,"married": true }  } '
+JSON.GET $employee_profile $employee
